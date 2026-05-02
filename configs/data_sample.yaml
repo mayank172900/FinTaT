@@ -1,0 +1,24 @@
+dataset:
+  name: fintta_schema_sample
+  mode: sample
+  grade: sample-only
+  start: "2019-10-01"
+  end: "2020-03-16"
+  description: Tiny deterministic schema-compatible panel for CI and demos only.
+
+paths:
+  sample_dir: data/sample
+
+features:
+  include_prefixes:
+    - feat_
+  exclude_columns:
+    - forward_return_1d
+    - forward_return_5d
+    - forward_return_20d
+    - label_5class_h1_quantile
+    - label_5class_h5_quantile
+    - label_5class_h20_quantile
+    - label_5class_h1_abs
+    - label_5class_h5_abs
+    - label_5class_h20_abs

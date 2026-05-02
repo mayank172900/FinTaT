@@ -1,0 +1,54 @@
+dataset:
+  name: fintta_open_prototype
+  mode: open_prototype
+  grade: prototype-grade
+  start: "2015-01-01"
+  end: "2024-12-31"
+  description: >
+    Prototype-only configuration for user-supplied open or public data. This is
+    not conference-grade unless the source includes point-in-time constituents,
+    inactive/delisted names, and as-of fundamentals/macroeconomic vintages.
+
+paths:
+  raw_dir: data/raw
+  intermediate_dir: data/intermediate
+  processed_dir: data/processed
+  panel_path: data/processed/panel_daily_2015_2024.parquet
+  raw_inputs:
+    prices: data/raw/open_prices_daily.parquet
+    universe: data/raw/open_universe_daily.parquet
+    macro: data/raw/fred_macro_asof_or_latest.parquet
+    factor_returns: data/raw/kenneth_french_daily_factors.parquet
+    short_interest: data/raw/finra_cnms_short_volume.parquet
+
+requirements:
+  required_raw_inputs:
+    - prices
+    - universe
+  require_active_and_inactive: false
+  require_delisting_returns: false
+  prohibit_current_constituent_backfill: true
+
+features:
+  include_prefixes:
+    - feat_
+  exclude_columns:
+    - forward_return_1d
+    - forward_return_5d
+    - forward_return_20d
+    - label_5class_h1_quantile
+    - label_5class_h5_quantile
+    - label_5class_h20_quantile
+    - label_5class_h1_abs
+    - label_5class_h5_abs
+    - label_5class_h20_abs
+
+labels:
+  horizons: [1, 5, 20]
+  quantile_breaks: [0.10, 0.35, 0.65, 0.90]
+  absolute_thresholds_on_future_norm_return: [-1.0, -0.25, 0.25, 1.0]
+
+graph:
+  topk_per_asset: 20
+  min_abs_weight: 0.05
+  precompute_edges: false

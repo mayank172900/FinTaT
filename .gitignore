@@ -1,0 +1,43 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.DS_Store
+
+# Model/checkpoint artifacts.
+*.pt
+*.pth
+*.ckpt
+
+# Licensed/generated empirical data. Keep data/sample committed.
+data/raw/*
+data/intermediate/*
+data/processed/*
+!data/raw/.gitkeep
+!data/intermediate/.gitkeep
+!data/processed/.gitkeep
+
+# Keep small open-data manifests and validation reports, not large raw panels.
+!data/raw/open/
+data/raw/open/*
+!data/raw/open/open_data_manifest.json
+!data/raw/open/yfinance_failed_tickers.json
+!data/raw/open/finra_download_report.json
+!data/processed/data_validation_report.json
+!data/processed/data_validation_report.md
+!data/processed/feature_metadata.json
+!data/processed/label_metadata.json
+!data/processed/open_data_summary.json
+!data/processed/universe_metadata.json
+
+# Keep result summaries, not checkpoints.
+outputs/**
+!outputs/
+!outputs/**/
+!outputs/**/metrics.csv
+!outputs/**/run_summary.json
+
+# Local Codex state
+.codex-goal-state.md
+
+# Local GitHub SSH deploy key material
+.github_fintat_ed25519*

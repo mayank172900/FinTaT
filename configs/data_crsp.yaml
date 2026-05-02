@@ -1,0 +1,83 @@
+dataset:
+  name: fintta_crsp_ccm_2015_2024
+  mode: licensed
+  grade: conference-grade-candidate
+  start: "2015-01-01"
+  end: "2024-12-31"
+  description: >
+    Point-in-time U.S. equity panel built from licensed CRSP daily stock data,
+    CRSP delisting returns, CRSP/Compustat Merged fundamentals, and optional
+    licensed TAQ/GICS/ETF/event/short-interest sources.
+
+paths:
+  raw_dir: data/raw
+  intermediate_dir: data/intermediate
+  processed_dir: data/processed
+  panel_path: data/processed/panel_daily_2015_2024.parquet
+  prices_daily: data/intermediate/prices_daily.parquet
+  universe_daily: data/intermediate/universe_daily.parquet
+  fundamentals_asof: data/intermediate/fundamentals_asof.parquet
+  macro_asof: data/intermediate/macro_asof.parquet
+  factor_returns: data/intermediate/factor_returns.parquet
+  factor_exposures_daily: data/intermediate/factor_exposures_daily.parquet
+  sector_industry_daily: data/intermediate/sector_industry_daily.parquet
+  etf_holdings_daily: data/intermediate/etf_holdings_daily.parquet
+  etf_asset_edges: data/intermediate/etf_asset_edges.parquet
+  liquidity_daily: data/intermediate/liquidity_daily.parquet
+  events_asof: data/intermediate/events_asof.parquet
+  short_interest_daily: data/intermediate/short_interest_daily.parquet
+  market_state_daily: data/intermediate/market_state_daily.parquet
+  graph_edges_daily: data/intermediate/graph_edges_daily.parquet
+  raw_inputs:
+    prices: data/raw/crsp_prices_daily.parquet
+    universe: data/raw/crsp_universe_daily.parquet
+    fundamentals: data/raw/ccm_compustat_quarterly_asof.parquet
+    macro: data/raw/alfred_macro_vintages.parquet
+    factor_returns: data/raw/kenneth_french_daily_factors.parquet
+    factor_exposures: data/raw/factor_exposures_daily.parquet
+    sector_industry: data/raw/gics_sector_industry_daily.parquet
+    etf_holdings: data/raw/etf_holdings_daily.parquet
+    liquidity: data/raw/taq_or_daily_liquidity.parquet
+    events: data/raw/events_filings_news_asof.parquet
+    short_interest: data/raw/short_interest_daily.parquet
+
+requirements:
+  required_raw_inputs:
+    - prices
+    - universe
+  require_active_and_inactive: true
+  require_delisting_returns: true
+  prohibit_current_constituent_backfill: true
+  point_in_time_identifiers:
+    preferred_asset_id: permno
+    allowed_asset_ids:
+      - permno
+      - figi
+      - vendor_security_id
+
+features:
+  include_prefixes:
+    - feat_
+  exclude_columns:
+    - forward_return_1d
+    - forward_return_5d
+    - forward_return_20d
+    - label_5class_h1_quantile
+    - label_5class_h5_quantile
+    - label_5class_h20_quantile
+    - label_5class_h1_abs
+    - label_5class_h5_abs
+    - label_5class_h20_abs
+
+labels:
+  horizons: [1, 5, 20]
+  quantile_breaks: [0.10, 0.35, 0.65, 0.90]
+  absolute_thresholds_on_future_norm_return: [-1.0, -0.25, 0.25, 1.0]
+
+graph:
+  topk_per_asset: 20
+  min_abs_weight: 0.05
+
+validation:
+  output_json: data/processed/data_validation_report.json
+  output_markdown: data/processed/data_validation_report.md

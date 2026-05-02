@@ -1,0 +1,65 @@
+data:
+  panel_path: data/processed/panel_daily_2015_2024.parquet
+  source_start: "2015-01-01"
+  source_end: "2019-12-31"
+  test_start: "2020-01-01"
+  test_end: "2024-12-31"
+  date_column: date
+  asset_column: asset_id
+  label_column: label_5class_h5_quantile
+  forward_return_column: forward_return_5d
+  liquidity_column: liquidity_score
+
+features:
+  include_prefixes:
+    - feat_
+  exclude_columns:
+    - forward_return_1d
+    - forward_return_5d
+    - forward_return_20d
+    - label_5class_h1_quantile
+    - label_5class_h5_quantile
+    - label_5class_h20_quantile
+    - label_5class_h1_abs
+    - label_5class_h5_abs
+    - label_5class_h20_abs
+
+graph:
+  sector_column: sector
+  industry_column: industry
+  factor_columns:
+    - factor_market_beta
+    - factor_sector_beta
+    - factor_rates_beta
+    - factor_oil_beta
+    - factor_mom_beta
+
+market_state:
+  columns:
+    - mkt_median_realized_vol_20
+    - mkt_cross_sectional_mad_return
+    - mkt_average_abs_corr_60
+    - mkt_market_mode_eigen_share_60
+    - mkt_liquidity_stress
+    - mkt_vix
+    - mkt_credit_spread
+    - mkt_yield_curve_10y_2y
+
+evaluation:
+  mode:
+    - prequential
+    - same_batch_unsupervised
+  metrics:
+    - accuracy
+    - balanced_accuracy
+    - macro_f1
+    - nll
+    - brier
+    - ece
+    - annualized_return
+    - sharpe
+    - max_drawdown
+    - calmar
+    - turnover
+    - tail_loss
+    - fp_buy_loss

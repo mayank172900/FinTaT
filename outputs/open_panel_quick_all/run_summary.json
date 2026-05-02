@@ -1,0 +1,145 @@
+{
+  "args": {
+    "batch_size": 2048,
+    "config": "configs/experiment_2015_2024.yaml",
+    "depth": 2,
+    "device": "cpu",
+    "epochs": 1,
+    "hidden_dim": 96,
+    "lr": 0.001,
+    "max_assets_per_day": 40,
+    "output_dir": "outputs/open_panel_quick_all",
+    "quick": true,
+    "seed": 7,
+    "test_end": "2020-03-31",
+    "test_start": "2020-01-01",
+    "variants": "all"
+  },
+  "checkpoint": "outputs/open_panel_quick_all/checkpoints/source_mlp_open.pt",
+  "config": {
+    "data": {
+      "asset_column": "asset_id",
+      "date_column": "date",
+      "forward_return_column": "forward_return_5d",
+      "label_column": "label_5class_h5_quantile",
+      "liquidity_column": "liquidity_score",
+      "panel_path": "data/processed/panel_daily_2015_2024.parquet",
+      "source_end": "2019-12-31",
+      "source_start": "2015-01-01",
+      "test_end": "2024-12-31",
+      "test_start": "2020-01-01"
+    },
+    "evaluation": {
+      "metrics": [
+        "accuracy",
+        "balanced_accuracy",
+        "macro_f1",
+        "nll",
+        "brier",
+        "ece",
+        "annualized_return",
+        "sharpe",
+        "max_drawdown",
+        "calmar",
+        "turnover",
+        "tail_loss",
+        "fp_buy_loss"
+      ],
+      "mode": [
+        "prequential",
+        "same_batch_unsupervised"
+      ]
+    },
+    "features": {
+      "exclude_columns": [
+        "forward_return_1d",
+        "forward_return_5d",
+        "forward_return_20d",
+        "label_5class_h1_quantile",
+        "label_5class_h5_quantile",
+        "label_5class_h20_quantile",
+        "label_5class_h1_abs",
+        "label_5class_h5_abs",
+        "label_5class_h20_abs"
+      ],
+      "include_prefixes": [
+        "feat_"
+      ]
+    },
+    "graph": {
+      "factor_columns": [
+        "factor_market_beta",
+        "factor_sector_beta",
+        "factor_rates_beta",
+        "factor_oil_beta",
+        "factor_mom_beta"
+      ],
+      "industry_column": "industry",
+      "sector_column": "sector"
+    },
+    "market_state": {
+      "columns": [
+        "mkt_median_realized_vol_20",
+        "mkt_cross_sectional_mad_return",
+        "mkt_average_abs_corr_60",
+        "mkt_market_mode_eigen_share_60",
+        "mkt_liquidity_stress",
+        "mkt_vix",
+        "mkt_credit_spread",
+        "mkt_yield_curve_10y_2y"
+      ]
+    }
+  },
+  "feature_count": 59,
+  "fintta_config_default": {
+    "adapter_norm_clip": 8.0,
+    "alpha_adapter_l2": 0.0001,
+    "alpha_anchor": 0.001,
+    "alpha_graph": 0.25,
+    "alpha_prior": 1.0,
+    "alpha_sharp": 0.0,
+    "alpha_teacher": 0.15,
+    "beta_pi": 0.7,
+    "c_reset": 5.0,
+    "confidence_floor": 0.35,
+    "epsilon": 1e-06,
+    "epsilon_pi": 0.02,
+    "eta_dir": 0.25,
+    "eta_slow": 0.02,
+    "grad_clip": 2.0,
+    "health_max": 8.0,
+    "lambda_max": 3.0,
+    "lambda_min": 0.2,
+    "long_only": false,
+    "lr": 0.0003,
+    "m_max": 200.0,
+    "max_regimes": 8,
+    "min_effective_assets": 4.0,
+    "num_classes": 5,
+    "rho_lambda": 1.0,
+    "risk_temperature": 1.0,
+    "same_batch_adaptation": true,
+    "seed": 7,
+    "stochastic_restore_p": 0.001,
+    "tau_confidence": 0.08,
+    "tau_cp": 0.6,
+    "tau_graph": 0.25,
+    "tau_typicality": 8.0,
+    "teacher_ema": 0.98,
+    "topk_edges": 6
+  },
+  "source_days": 1258,
+  "source_rows": 50320,
+  "test_days": 62,
+  "test_rows": 2480,
+  "variants": [
+    "no_adaptation",
+    "fintta_prequential",
+    "fintta_same_batch",
+    "fintta_no_risk",
+    "fintta_no_graph",
+    "fintta_no_prior",
+    "fintta_no_teacher",
+    "tent_lite"
+  ]
+}

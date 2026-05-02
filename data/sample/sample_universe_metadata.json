@@ -1,0 +1,12 @@
+{
+  "active_rows": 935,
+  "asset_id_rule": "Use stable PERMNO/FIGI/vendor security id; tickers are descriptive and may change.",
+  "assets": 8,
+  "dataset_grade": "sample-only",
+  "date_max": "2020-03-16",
+  "date_min": "2019-10-01",
+  "delisting_return_rows": 1,
+  "inactive_rows": 1,
+  "rows": 936,
+  "survivorship_rule": "Inactive/delisted securities must remain in historical rows when supported by the source."
+}

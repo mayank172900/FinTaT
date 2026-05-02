@@ -1,0 +1,805 @@
+{
+  "dataset_grade": "unknown",
+  "distribution": {
+    "asset_count_by_year": {
+      "2019": 8,
+      "2020": 8
+    },
+    "average_assets_per_day": 7.8,
+    "feature_mean_std_by_split": {
+      "source_2015_2019_or_sample_pre2020": {
+        "feat_amihud_20": {
+          "mean": 0.0003793902591180801,
+          "std": 0.0002425641666242557
+        },
+        "feat_analyst_revision_30d": {
+          "mean": -0.0004728837822406112,
+          "std": 0.02020237203852516
+        },
+        "feat_asset_growth": {
+          "mean": 0.020385636749142122,
+          "std": 0.009856484762539973
+        },
+        "feat_book_to_market": {
+          "mean": 0.34879009472024325,
+          "std": 0.022258586913396026
+        },
+        "feat_borrow_fee": {
+          "mean": 0.002485534163033127,
+          "std": 0.0016127619461816446
+        },
+        "feat_credit_spread": {
+          "mean": 0.7410469417264266,
+          "std": 0.033265934809417905
+        },
+        "feat_days_since_earnings": {
+          "mean": 31.625,
+          "std": 18.81679122163388
+        },
+        "feat_days_to_earnings": {
+          "mean": 30.0625,
+          "std": 18.7621149981295
+        },
+        "feat_dollar_volume_z_20": {
+          "mean": 0.09194005530130178,
+          "std": 1.0614317325017342
+        },
+        "feat_downside_vol_20": {
+          "mean": 0.008672051114992379,
+          "std": 0.0025579919656723146
+        },
+        "feat_drawdown_20": {
+          "mean": -0.03156914835791707,
+          "std": 0.027220495446823013
+        },
+        "feat_drawdown_252": {
+          "mean": -0.0419511853122993,
+          "std": 0.03452686096784663
+        },
+        "feat_drawdown_60": {
+          "mean": -0.04184417537842344,
+          "std": 0.03444785934389564
+        },
+        "feat_earnings_event_flag": {
+          "mean": 0.020833333333333332,
+          "std": 0.14296158195558525
+        },
+        "feat_earnings_yield": {
+          "mean": 0.04001686788073173,
+          "std": 0.004359399535532925
+        },
+        "feat_kurtosis_60": {
+          "mean": -0.20481516769425415,
+          "std": 0.8105234655729404
+        },
+        "feat_leverage": {
+          "mean": 0.2494465777206943,
+          "std": 0.01655346469527856
+        },
+        "feat_liquidity_score": {
+          "mean": 0.9457748880970644,
+          "std": 0.0032240699711744945
+        },
+        "feat_market_beta_252": {
+          "mean": 0.7121212121212122,
+          "std": 0.49270323432826885
+        },
+        "feat_market_beta_60": {
+          "mean": 0.7121212121212122,
+          "std": 0.49293100031257264
+        },
+        "feat_market_relative_return_20": {
+          "mean": -5.782411586589357e-19,
+          "std": 0.029988203938626532
+        },
+        "feat_market_state_corr": {
+          "mean": 0.6150492070138422,
+          "std": 0.10325657451421837
+        },
+        "feat_market_state_liquidity": {
+          "mean": 0.05335633772600488,
+          "std": 0.0010483471482661312
+        },
+        "feat_market_state_vol": {
+          "mean": 0.013128111489968479,
+          "std": 0.0018791143683985151
+        },
+        "feat_mom_beta_252": {
+          "mean": -0.18157550436154346,
+          "std": 0.22076335403158878
+        },
+        "feat_momentum_20": {
+          "mean": 0.008273996948801734,
+          "std": 0.04114884274807254
+        },
+        "feat_momentum_5": {
+          "mean": 0.0034345442432817935,
+          "std": 0.0289672673454611
+        },
+        "feat_momentum_60": {
+          "mean": 0.0021750001102239526,
+          "std": 0.047062758586032066
+        },
+        "feat_oil_beta_252": {
+          "mean": 0.19366556511925734,
+          "std": 0.17275593811137005
+        },
+        "feat_profitability": {
+          "mean": 0.14960821464117233,
+          "std": 0.011286812210827321
+        },
+        "feat_rates_beta_252": {
+          "mean": -0.22602238979220682,
+          "std": 0.4840275648323128
+        },
+        "feat_realized_vol_20": {
+          "mean": 0.013269195489657451,
+          "std": 0.0029331136806836546
+        },
+        "feat_realized_vol_252": {
+          "mean": 0.013729958072373344,
+          "std": 0.002751807724535309
+        },
+        "feat_realized_vol_5": {
+          "mean": 0.012399755605955305,
+          "std": 0.004288122407913737
+        },
+        "feat_realized_vol_60": {
+          "mean": 0.013712439169422632,
+          "std": 0.0027572793820077562
+        },
+        "feat_residual_vol_60": {
+          "mean": 0.00769050411653529,
+          "std": 0.001660992170774188
+        },
+        "feat_ret_lag_1": {
+          "mean": 0.0009582658800970981,
+          "std": 0.013097992075345309
+        },
+        "feat_ret_lag_10": {
+          "mean": 0.00033921521342280365,
+          "std": 0.012239328099085359
+        },
+        "feat_ret_lag_2": {
+          "mean": 0.0006800159875438885,
+          "std": 0.012902017638745898
+        },
+        "feat_ret_lag_20": {
+          "mean": 5.7986634749989925e-05,
+          "std": 0.011509793644597715
+        },
+        "feat_ret_lag_3": {
+          "mean": 0.0006029256366755511,
+          "std": 0.012868340550887076
+        },
+        "feat_ret_lag_5": {
+          "mean": 0.00041341968897979714,
+          "std": 0.012650811374378847
+        },
+        "feat_ret_lag_60": {
+          "mean": 7.579743662622142e-05,
+          "std": 0.005251781662427012
+        },
+        "feat_reversal_1": {
+          "mean": -0.0009582658800970981,
+          "std": 0.013097992075345309
+        },
+        "feat_sales_growth": {
+          "mean": 0.029629825400433872,
+          "std": 0.011893770715312672
+        },
+        "feat_sector_beta_252": {
+          "mean": 0.7121212121212122,
+          "std": 0.4583416625060405
+        },
+        "feat_sector_beta_60": {
+          "mean": 0.7121212121212122,
+          "std": 0.45829679024090025
+        },
+        "feat_sector_relative_return_20": {
+          "mean": 0.0,
+          "std": 0.012414658405580337
+        },
+        "feat_sector_relative_return_5": {
+          "mean": 0.0,
+          "std": 0.00788545447970235
+        },
+        "feat_sector_relative_return_60": {
+          "mean": 0.0,
+          "std": 0.01314287277631237
+        },
+        "feat_short_interest_ratio": {
+          "mean": 0.04021371553656384,
+          "std": 0.010316467376803293
+        },
+        "feat_skew_60": {
+          "mean": 0.25746521476550677,
+          "std": 0.38487037506149874
+        },
+        "feat_spread_proxy": {
+          "mean": 0.0025628215001151527,
+          "std": 1.60238793754301e-05
+        },
+        "feat_turnover_20": {
+          "mean": 0.02196163198979961,
+          "std": 0.0007557068169381622
+        },
+        "feat_value_beta_252": {
+          "mean": 0.49770324415492934,
+          "std": 0.5895316264471854
+        },
+        "feat_vix": {
+          "mean": 16.1856642512957,
+          "std": 2.039211216971226
+        },
+        "feat_volume_z_20": {
+          "mean": -0.04120643609341134,
+          "std": 0.9346949412475303
+        },
+        "feat_volume_z_60": {
+          "mean": -0.09274227198844981,
+          "std": 0.9323593791952994
+        },
+        "feat_yield_curve_10y_2y": {
+          "mean": 0.4818126353416258,
+          "std": 0.015424144624843195
+        }
+      },
+      "tta_2020_2024_or_sample_post2019": {
+        "feat_amihud_20": {
+          "mean": 0.0003402500459642859,
+          "std": 0.0001988238130578944
+        },
+        "feat_analyst_revision_30d": {
+          "mean": -0.0006521597812683824,
+          "std": 0.01961075233932414
+        },
+        "feat_asset_growth": {
+          "mean": 0.019469700824729774,
+          "std": 0.009944196151428065
+        },
+        "feat_book_to_market": {
+          "mean": 0.3501187412249495,
+          "std": 0.022115126751367065
+        },
+        "feat_borrow_fee": {
+          "mean": 0.0022701249804092647,
+          "std": 0.0014481342550027817
+        },
+        "feat_credit_spread": {
+          "mean": 0.9736368222385262,
+          "std": 0.4050601718801191
+        },
+        "feat_days_since_earnings": {
+          "mean": 26.86764705882353,
+          "std": 16.213172439206065
+        },
+        "feat_days_to_earnings": {
+          "mean": 35.36029411764706,
+          "std": 16.414624387136495
+        },
+        "feat_dollar_volume_z_20": {
+          "mean": 0.7642865762468204,
+          "std": 1.0708280655597542
+        },
+        "feat_downside_vol_20": {
+          "mean": 0.010634879632616787,
+          "std": 0.008840866884033441
+        },
+        "feat_drawdown_20": {
+          "mean": -0.04975169317275428,
+          "std": 0.08681847602450164
+        },
+        "feat_drawdown_252": {
+          "mean": -0.05574720219166642,
+          "std": 0.08622452227805182
+        },
+        "feat_drawdown_60": {
+          "mean": -0.051088585309770375,
+          "std": 0.08654965790634829
+        },
+        "feat_earnings_event_flag": {
+          "mean": 0.012254901960784314,
+          "std": 0.11015652801297085
+        },
+        "feat_earnings_yield": {
+          "mean": 0.04042206799715155,
+          "std": 0.004366712147883788
+        },
+        "feat_kurtosis_60": {
+          "mean": 0.8891734507385468,
+          "std": 3.7315589067081736
+        },
+        "feat_leverage": {
+          "mean": 0.24927356093506384,
+          "std": 0.016339851166421927
+        },
+        "feat_liquidity_score": {
+          "mean": 0.9454758481601218,
+          "std": 0.004185627996848212
+        },
+        "feat_market_beta_252": {
+          "mean": 0.9398703107626313,
+          "std": 0.22823857947027104
+        },
+        "feat_market_beta_60": {
+          "mean": 0.9008922020578072,
+          "std": 0.2693696878673691
+        },
+        "feat_market_relative_return_20": {
+          "mean": 0.01484833851447808,
+          "std": 0.05492205633536196
+        },
+        "feat_market_state_corr": {
+          "mean": 0.4727546364537433,
+          "std": 0.06083590152082354
+        },
+        "feat_market_state_liquidity": {
+          "mean": 0.05364098947191309,
+          "std": 0.0016460208257547018
+        },
+        "feat_market_state_vol": {
+          "mean": 0.014673367168326911,
+          "std": 0.007097611376880062
+        },
+        "feat_mom_beta_252": {
+          "mean": 0.06267416177594391,
+          "std": 0.1712462745889906
+        },
+        "feat_momentum_20": {
+          "mean": 0.004401065719334357,
+          "std": 0.1122369081524081
+        },
+        "feat_momentum_5": {
+          "mean": -0.01822029735564456,
+          "std": 0.07459735304496656
+        },
+        "feat_momentum_60": {
+          "mean": 0.07045033383645138,
+          "std": 0.1132034470632566
+        },
+        "feat_oil_beta_252": {
+          "mean": 0.14578791881207082,
+          "std": 0.09153443646904309
+        },
+        "feat_profitability": {
+          "mean": 0.14910317080954827,
+          "std": 0.010904769889930579
+        },
+        "feat_rates_beta_252": {
+          "mean": 0.05495116287971696,
+          "std": 0.32858934693666986
+        },
+        "feat_realized_vol_20": {
+          "mean": 0.014863318464529393,
+          "std": 0.007787858779804452
+        },
+        "feat_realized_vol_252": {
+          "mean": 0.013490059807142593,
+          "std": 0.0027066034223494104
+        },
+        "feat_realized_vol_5": {
+          "mean": 0.01775677276071709,
+          "std": 0.015681375741236687
+        },
+        "feat_realized_vol_60": {
+          "mean": 0.013525838622441605,
+          "std": 0.0038019489442015658
+        },
+        "feat_residual_vol_60": {
+          "mean": 0.008781222384703637,
+          "std": 0.0020009116566370878
+        },
+        "feat_ret_lag_1": {
+          "mean": -0.004607663025400469,
+          "std": 0.022953227666921584
+        },
+        "feat_ret_lag_10": {
+          "mean": 0.0011794025621234936,
+          "std": 0.014250981568628739
+        },
+        "feat_ret_lag_2": {
+          "mean": -0.003810658489573625,
+          "std": 0.022987234445478857
+        },
+        "feat_ret_lag_20": {
+          "mean": 0.002405383953442947,
+          "std": 0.01156341888659009
+        },
+        "feat_ret_lag_3": {
+          "mean": -0.0024019434035029603,
+          "std": 0.020623514400131146
+        },
+        "feat_ret_lag_5": {
+          "mean": -0.0010697507581265597,
+          "std": 0.018773756490478858
+        },
+        "feat_ret_lag_60": {
+          "mean": 0.000643715036077184,
+          "std": 0.012675899619128135
+        },
+        "feat_reversal_1": {
+          "mean": 0.004607663025400469,
+          "std": 0.022953227666921584
+        },
+        "feat_sales_growth": {
+          "mean": 0.029630080992141084,
+          "std": 0.01240981297118613
+        },
+        "feat_sector_beta_252": {
+          "mean": 1.0,
+          "std": 0.07185877256262226
+        },
+        "feat_sector_beta_60": {
+          "mean": 0.9999999999999997,
+          "std": 0.07250864352232993
+        },
+        "feat_sector_relative_return_20": {
+          "mean": 0.0,
+          "std": 0.02142205861039795
+        },
+        "feat_sector_relative_return_5": {
+          "mean": 0.0,
+          "std": 0.013189727253242318
+        },
+        "feat_sector_relative_return_60": {
+          "mean": 0.0,
+          "std": 0.016207792368005427
+        },
+        "feat_short_interest_ratio": {
+          "mean": 0.03929016403250139,
+          "std": 0.010451870546998176
+        },
+        "feat_skew_60": {
+          "mean": -0.3702955380343177,
+          "std": 0.7694270801936781
+        },
+        "feat_spread_proxy": {
+          "mean": 0.0025583181760142877,
+          "std": 1.47444021133513e-05
+        },
+        "feat_turnover_20": {
+          "mean": 0.02313030392341142,
+          "std": 0.003004132430527482
+        },
+        "feat_value_beta_252": {
+          "mean": 0.3056938946933339,
+          "std": 0.23724809857842388
+        },
+        "feat_vix": {
+          "mean": 24.45502038853795,
+          "std": 17.909366498622592
+        },
+        "feat_volume_z_20": {
+          "mean": 0.37630417760090723,
+          "std": 1.2051897630743669
+        },
+        "feat_volume_z_60": {
+          "mean": 0.6874219636447848,
+          "std": 1.8018678380978983
+        },
+        "feat_yield_curve_10y_2y": {
+          "mean": 0.3865850361410257,
+          "std": 0.0614989326238742
+        }
+      }
+    },
+    "label_distribution_by_year": {
+      "label_5class_h1_abs": {
+        "2019": {
+          "0": 80,
+          "1": 124,
+          "2": 105,
+          "3": 121,
+          "4": 98
+        },
+        "2020": {
+          "0": 91,
+          "1": 71,
+          "2": 72,
+          "3": 106,
+          "4": 68
+        }
+      },
+      "label_5class_h1_quantile": {
+        "2019": {
+          "0": 66,
+          "1": 132,
+          "2": 132,
+          "3": 132,
+          "4": 66
+        },
+        "2020": {
+          "0": 53,
+          "1": 106,
+          "2": 90,
+          "3": 106,
+          "4": 53
+        }
+      },
+      "label_5class_h20_abs": {
+        "2019": {
+          "0": 104,
+          "1": 24,
+          "2": 22,
+          "3": 37,
+          "4": 341
+        },
+        "2020": {
+          "0": 85,
+          "1": 6,
+          "2": 171,
+          "3": 15,
+          "4": 131
+        }
+      },
+      "label_5class_h20_quantile": {
+        "2019": {
+          "0": 66,
+          "1": 132,
+          "2": 132,
+          "3": 132,
+          "4": 66
+        },
+        "2020": {
+          "0": 34,
+          "1": 68,
+          "2": 204,
+          "3": 68,
+          "4": 34
+        }
+      },
+      "label_5class_h5_abs": {
+        "2019": {
+          "0": 144,
+          "1": 74,
+          "2": 50,
+          "3": 64,
+          "4": 196
+        },
+        "2020": {
+          "0": 139,
+          "1": 33,
+          "2": 62,
+          "3": 32,
+          "4": 142
+        }
+      },
+      "label_5class_h5_quantile": {
+        "2019": {
+          "0": 66,
+          "1": 132,
+          "2": 132,
+          "3": 132,
+          "4": 66
+        },
+        "2020": {
+          "0": 49,
+          "1": 98,
+          "2": 114,
+          "3": 98,
+          "4": 49
+        }
+      }
+    },
+    "liquidity_summary": {
+      "max": 0.9491091485855601,
+      "median": 0.9467693629464675,
+      "min": 0.9167783457434716,
+      "p25": 0.9447555596752671,
+      "p75": 0.9479278152396526
+    },
+    "market_cap_summary": {
+      "max": 3464445515.608187,
+      "median": 1611356027.2035532,
+      "min": 420944680.357389,
+      "p25": 1019114214.1005583,
+      "p75": 2164603810.49524
+    },
+    "rows_by_year": {
+      "2019": 528,
+      "2020": 408
+    },
+    "sector_distribution_by_year": {
+      "2019": {
+        "consumer": 66,
+        "energy": 66,
+        "financials": 132,
+        "healthcare": 66,
+        "industrials": 66,
+        "technology": 132
+      },
+      "2020": {
+        "consumer": 30,
+        "energy": 54,
+        "financials": 108,
+        "healthcare": 54,
+        "industrials": 54,
+        "technology": 108
+      }
+    }
+  },
+  "errors": [],
+  "graph": {
+    "available": false,
+    "reason": "graph edge file not found: data/intermediate/graph_edges_daily.parquet"
+  },
+  "leakage": {
+    "adaptation_feature_count": 59,
+    "evaluation_columns_in_adaptation_features": [],
+    "feature_columns_all_prefixed": true,
+    "filing_date_after_date_rows": 0,
+    "macro_vintage_after_date_rows": 0,
+    "result": "pass",
+    "timestamp_columns_after_date": {}
+  },
+  "market_state": {
+    "crisis_volatility_elevated": true,
+    "missing_columns": [],
+    "required_columns_present": [
+      "mkt_median_realized_vol_20",
+      "mkt_cross_sectional_mad_return",
+      "mkt_average_abs_corr_60",
+      "mkt_market_mode_eigen_share_60",
+      "mkt_liquidity_stress",
+      "mkt_vix",
+      "mkt_credit_spread",
+      "mkt_yield_curve_10y_2y"
+    ],
+    "summary": {
+      "mkt_average_abs_corr_60": {
+        "max": 1.0,
+        "median": 0.5780986842129003,
+        "min": 0.0,
+        "p25": 0.4970134231696661,
+        "p75": 0.6046644294329849
+      },
+      "mkt_credit_spread": {
+        "max": 1.8246959977909507,
+        "median": 0.7660955892789034,
+        "min": 0.7000037536597459,
+        "p25": 0.7289156961632057,
+        "p75": 0.7943491203503338
+      },
+      "mkt_cross_sectional_mad_return": {
+        "max": 0.026401966059514836,
+        "median": 0.005201023777700736,
+        "min": 0.00042801720757590367,
+        "p25": 0.0035620139445268484,
+        "p75": 0.006504273953366585
+      },
+      "mkt_liquidity_stress": {
+        "max": 0.05954273829321821,
+        "median": 0.05317628913617417,
+        "min": 0.05168287773544278,
+        "p25": 0.052552614042878865,
+        "p75": 0.054137897428636506
+      },
+      "mkt_market_mode_eigen_share_60": {
+        "max": 1.0,
+        "median": 0.6376427945473049,
+        "min": 0.0,
+        "p25": 0.5650396489827372,
+        "p75": 0.6622639385798526
+      },
+      "mkt_median_realized_vol_20": {
+        "max": 0.04062977694791543,
+        "median": 0.012340346069442034,
+        "min": 0.007534174627417567,
+        "p25": 0.011620960242021024,
+        "p75": 0.013566112651921446
+      },
+      "mkt_vix": {
+        "max": 62.829503164621144,
+        "median": 16.63235682493358,
+        "min": 13.00002938034789,
+        "p25": 13.99377812400309,
+        "p75": 18.58010294529559
+      },
+      "mkt_yield_curve_10y_2y": {
+        "max": 0.4999999900066684,
+        "median": 0.4570872934463033,
+        "min": 0.25560617069325037,
+        "p25": 0.40527978771701445,
+        "p75": 0.48776770554802135
+      }
+    }
+  },
+  "missingness": {
+    "feature_missing_rate_top50": {
+      "feat_analyst_revision_30d": 0.0,
+      "feat_asset_growth": 0.0,
+      "feat_book_to_market": 0.0,
+      "feat_borrow_fee": 0.0,
+      "feat_credit_spread": 0.0,
+      "feat_days_since_earnings": 0.0,
+      "feat_days_to_earnings": 0.0,
+      "feat_downside_vol_20": 0.0,
+      "feat_drawdown_20": 0.0,
+      "feat_drawdown_60": 0.0,
+      "feat_earnings_event_flag": 0.0,
+      "feat_earnings_yield": 0.0,
+      "feat_kurtosis_60": 0.0,
+      "feat_leverage": 0.0,
+      "feat_market_beta_252": 0.0,
+      "feat_market_beta_60": 0.0,
+      "feat_market_relative_return_20": 0.0,
+      "feat_market_state_corr": 0.0,
+      "feat_market_state_vol": 0.0,
+      "feat_mom_beta_252": 0.0,
+      "feat_momentum_20": 0.0,
+      "feat_momentum_5": 0.0,
+      "feat_momentum_60": 0.0,
+      "feat_oil_beta_252": 0.0,
+      "feat_profitability": 0.0,
+      "feat_rates_beta_252": 0.0,
+      "feat_realized_vol_20": 0.0,
+      "feat_realized_vol_252": 0.0,
+      "feat_realized_vol_5": 0.0,
+      "feat_realized_vol_60": 0.0,
+      "feat_residual_vol_60": 0.0,
+      "feat_ret_lag_1": 0.0,
+      "feat_ret_lag_10": 0.0,
+      "feat_ret_lag_2": 0.0,
+      "feat_ret_lag_20": 0.0,
+      "feat_ret_lag_3": 0.0,
+      "feat_ret_lag_5": 0.0,
+      "feat_ret_lag_60": 0.0,
+      "feat_reversal_1": 0.0,
+      "feat_sales_growth": 0.0,
+      "feat_sector_beta_252": 0.0,
+      "feat_sector_beta_60": 0.0,
+      "feat_sector_relative_return_20": 0.0,
+      "feat_sector_relative_return_5": 0.0,
+      "feat_sector_relative_return_60": 0.0,
+      "feat_short_interest_ratio": 0.0,
+      "feat_skew_60": 0.0,
+      "feat_value_beta_252": 0.0,
+      "feat_vix": 0.0,
+      "feat_yield_curve_10y_2y": 0.0
+    },
+    "mean_missing_rate_by_date_top10": {
+      "2019-10-01": 0.0,
+      "2019-10-02": 0.0,
+      "2020-01-22": 0.0,
+      "2020-01-23": 0.0,
+      "2020-01-24": 0.0,
+      "2020-01-27": 0.0,
+      "2020-01-28": 0.0,
+      "2020-01-29": 0.0,
+      "2020-01-30": 0.0,
+      "2020-01-31": 0.0
+    },
+    "mean_missing_rate_by_sector": {
+      "consumer": 0.0,
+      "energy": 0.0,
+      "financials": 0.0,
+      "healthcare": 0.0,
+      "industrials": 0.0,
+      "technology": 0.0
+    },
+    "rows_with_any_feature_missing": 0
+  },
+  "panel_path": "data/sample/sample_panel.parquet",
+  "schema": {
+    "asset_count": 8,
+    "columns": 152,
+    "date_max": "2020-03-16",
+    "date_min": "2019-10-01",
+    "dates_sorted": true,
+    "duplicate_date_asset_rows": 0,
+    "missing_final_schema_columns": [],
+    "missing_minimum_columns": [],
+    "rows": 936
+  },
+  "status": "pass",
+  "survivorship": {
+    "active_rows": 935,
+    "assets_with_inactive_rows": 1,
+    "delisting_return_rows": 1,
+    "inactive_rows": 1,
+    "note": "For conference-grade CRSP/Norgate builds, inactive/delisted rows must be nonzero when applicable.",
+    "ticker_changes_by_asset": {}
+  },
+  "warnings": []
+}

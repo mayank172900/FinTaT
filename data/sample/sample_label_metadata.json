@@ -1,0 +1,35 @@
+{
+  "absolute_thresholds_on_future_norm_return": [
+    -1.0,
+    -0.25,
+    0.25,
+    1.0
+  ],
+  "classes": {
+    "0": "strong sell",
+    "1": "sell",
+    "2": "hold",
+    "3": "buy",
+    "4": "strong buy"
+  },
+  "forward_returns": [
+    "forward_return_1d",
+    "forward_return_5d",
+    "forward_return_20d"
+  ],
+  "future_norm_returns": [
+    "future_norm_return_1d",
+    "future_norm_return_5d",
+    "future_norm_return_20d"
+  ],
+  "labels": [
+    "label_5class_h1_quantile",
+    "label_5class_h5_quantile",
+    "label_5class_h20_quantile",
+    "label_5class_h1_abs",
+    "label_5class_h5_abs",
+    "label_5class_h20_abs"
+  ],
+  "offline_only": true,
+  "quantile_buckets": "<q10, q10-q35, q35-q65, q65-q90, >=q90 by date"
+}
