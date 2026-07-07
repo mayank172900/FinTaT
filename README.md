@@ -235,6 +235,12 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
+For the optional open-data prototype downloader, install the open-data extras too:
+
+```bash
+pip install -e ".[dev,open-data]"
+```
+
 Run tests:
 
 ```bash

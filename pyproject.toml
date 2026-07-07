@@ -18,7 +18,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "ruff"]
+open-data = ["requests", "yfinance"]
 
 [project.scripts]
 fintta-demo = "fintta.experiment:main"
