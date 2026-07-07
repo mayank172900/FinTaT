@@ -55,7 +55,7 @@ def build_signed_graph(batch: AssetBatch, config: FinTTAConfig, device: torch.de
         pos_w = topk_softmax(pos_t, config.topk_edges)
         neg_w = topk_softmax(neg_t, max(1, config.topk_edges // 2))
         for local, w in enumerate(pos_w):
-            if float(w) > 0:
+            if float(w) > 0 and float(pos_t[local]) > 0.05:
                 src.append(i)
                 dst.append(int(cand_t[local]))
                 weight.append(float(w))
