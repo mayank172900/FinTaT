@@ -117,8 +117,7 @@ def validate_panel(panel_path: str | Path, config_path: str | Path | None = None
         "feature_mean_std_by_split": _feature_mean_std_by_split(panel, feature_columns),
     }
 
-    graph_default = panel_path.parent.parent / "intermediate" / "graph_edges_daily.parquet"
-    graph_path = Path(graph_path) if graph_path else graph_default
+    graph_path = Path(graph_path) if graph_path else _default_graph_path(panel_path)
     if graph_path.exists():
         graph = read_table(graph_path)
         report["graph"] = _graph_report(graph, panel)
@@ -186,6 +185,16 @@ def _date_order_violations(panel: pd.DataFrame, column: str) -> int:
         return 0
     values = pd.to_datetime(panel[column], errors="coerce")
     return int((values.notna() & (values > panel[DATE_COLUMN])).sum())
+
+
+def _default_graph_path(panel_path: Path) -> Path:
+    sibling = panel_path.with_name(panel_path.stem.replace("_panel", "_graph_edges") + panel_path.suffix)
+    if sibling.exists():
+        return sibling
+    sample_sibling = panel_path.with_name("sample_graph_edges.parquet")
+    if sample_sibling.exists():
+        return sample_sibling
+    return panel_path.parent.parent / "intermediate" / "graph_edges_daily.parquet"
 
 
 def _ticker_change_counts(panel: pd.DataFrame) -> dict[str, int]:

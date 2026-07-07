@@ -621,8 +621,41 @@
   },
   "errors": [],
   "graph": {
-    "available": false,
-    "reason": "graph edge file not found: data/intermediate/graph_edges_daily.parquet"
+    "available": true,
+    "average_correlation_by_date_available": "rolling_corr flags are encoded in edge_source_flags",
+    "edge_count": 3139,
+    "edge_count_per_date_summary": {
+      "max": 28.0,
+      "median": 27.0,
+      "min": 21.0,
+      "p25": 27.0,
+      "p75": 28.0
+    },
+    "isolated_asset_count_top10_dates": {
+      "2019-10-01": 0,
+      "2019-10-02": 0,
+      "2019-10-03": 0,
+      "2019-10-04": 0,
+      "2019-10-07": 0,
+      "2019-10-08": 0,
+      "2019-10-09": 0,
+      "2019-10-10": 0,
+      "2019-10-11": 0,
+      "2019-10-14": 0
+    },
+    "negative_edges": 4,
+    "positive_edges": 3135,
+    "positive_negative_ratio": 783.75,
+    "top_connected_assets": {
+      "SAMP001": 815,
+      "SAMP002": 798,
+      "SAMP003": 782,
+      "SAMP004": 816,
+      "SAMP005": 816,
+      "SAMP006": 786,
+      "SAMP007": 797,
+      "SAMP008": 668
+    }
   },
   "leakage": {
     "adaptation_feature_count": 59,
