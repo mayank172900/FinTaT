@@ -6,15 +6,14 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
-
 from data_utils import (
     ASSET_COLUMN,
     DATE_COLUMN,
     EVALUATION_ONLY_COLUMNS,
+    FEATURE_COLUMNS,
     FINAL_REQUIRED_COLUMNS,
     LABEL_COLUMNS,
     MARKET_STATE_COLUMNS,
-    FEATURE_COLUMNS,
     load_config,
     read_table,
     write_json,

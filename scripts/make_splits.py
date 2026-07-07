@@ -4,7 +4,6 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-
 from data_utils import DATE_COLUMN, load_config, read_table, write_table
 
 

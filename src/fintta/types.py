@@ -25,7 +25,7 @@ class AssetBatch:
     labels: torch.Tensor | None = None
     forward_returns: np.ndarray | None = None
 
-    def to(self, device: torch.device | str) -> "AssetBatch":
+    def to(self, device: torch.device | str) -> AssetBatch:
         return AssetBatch(
             x=self.x.to(device),
             asset_ids=self.asset_ids,

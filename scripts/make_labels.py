@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-from pathlib import Path
 
 from data_utils import label_metadata, make_labels, read_table, write_json, write_table
 

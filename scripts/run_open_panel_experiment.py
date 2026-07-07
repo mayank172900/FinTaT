@@ -30,7 +30,6 @@ from fintta.experiment import run_no_adaptation, train_source_model
 from fintta.metrics import classification_metrics, trading_metrics
 from fintta.model import AdaptableMLP
 
-
 DEFAULT_VARIANTS = [
     "no_adaptation",
     "fintta_prequential",

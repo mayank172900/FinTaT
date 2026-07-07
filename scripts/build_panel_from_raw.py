@@ -6,7 +6,6 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-
 from data_utils import (
     ASSET_COLUMN,
     DATE_COLUMN,
@@ -15,7 +14,6 @@ from data_utils import (
     label_metadata,
     load_config,
     read_table,
-    sample_metadata,
     sort_panel,
     universe_metadata,
     write_json,

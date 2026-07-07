@@ -9,7 +9,6 @@ import pandas as pd
 import pyarrow.parquet as pq
 import yaml
 
-
 DATE_COLUMN = "date"
 ASSET_COLUMN = "asset_id"
 
@@ -289,7 +288,7 @@ def add_causal_features(frame: pd.DataFrame) -> pd.DataFrame:
         drawdowns = []
         for _, sub in df.groupby(ASSET_COLUMN, sort=False):
             roll_max = sub["adjusted_close"].rolling(window, min_periods=1).max()
-            drawdowns.append((sub["adjusted_close"] / roll_max.replace(0, np.nan) - 1.0))
+            drawdowns.append(sub["adjusted_close"] / roll_max.replace(0, np.nan) - 1.0)
         df[f"feat_drawdown_{window}"] = pd.concat(drawdowns).sort_index()
 
     df["feat_volume_z_20"] = rolling_z_by_asset(df, "volume", 20)
