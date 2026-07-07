@@ -21,6 +21,46 @@ def classification_metrics(probabilities: list[torch.Tensor], labels: list[torch
     }
 
 
+def daily_long_short_return(
+    scores: torch.Tensor | np.ndarray,
+    forward_returns: np.ndarray | torch.Tensor,
+    previous_weights: dict[str, float] | np.ndarray | None = None,
+    asset_ids: list[str] | None = None,
+    q: float = 0.2,
+    cost_bps: float = 10.0,
+) -> tuple[float, dict[str, float] | np.ndarray]:
+    s = _as_numpy(scores)
+    r = _as_numpy(forward_returns)
+    n = len(s)
+    if n == 0:
+        return 0.0, {} if asset_ids is not None else np.zeros(0, dtype=np.float64)
+
+    k = min(max(1, int(q * n)), n // 2)
+    w = np.zeros(n, dtype=np.float64)
+    if k > 0:
+        long_idx = np.argpartition(s, n - k)[-k:]
+        short_idx = np.argpartition(s, k - 1)[:k]
+        w[long_idx] = 1.0 / (2 * k)
+        w[short_idx] = -1.0 / (2 * k)
+
+    weight_by_asset: dict[str, float] | np.ndarray
+    if asset_ids is None:
+        weight_by_asset = w.copy()
+    else:
+        weight_by_asset = {str(asset_id): float(weight) for asset_id, weight in zip(asset_ids, w, strict=True)}
+
+    if previous_weights is None:
+        turnover = float(np.abs(w).sum())
+    elif isinstance(previous_weights, dict):
+        universe = set(previous_weights).union(weight_by_asset)
+        turnover = float(sum(abs(weight_by_asset.get(asset_id, 0.0) - previous_weights.get(asset_id, 0.0)) for asset_id in universe))
+    else:
+        turnover = float(np.abs(w - previous_weights).sum())
+
+    daily_return = float(w @ r - turnover * cost_bps / 10000.0)
+    return daily_return, weight_by_asset
+
+
 def expected_calibration_error(p: np.ndarray, y: np.ndarray, bins: int = 10) -> float:
     conf = p.max(axis=1)
     pred = p.argmax(axis=1)
@@ -47,26 +87,10 @@ def trading_metrics(
     if asset_ids is None:
         asset_ids = [[str(i) for i in range(len(score_t))] for score_t in scores]
     for score_t, ret_t, label_t, ids_t in zip(scores, forward_returns, labels, asset_ids):
-        s = score_t.numpy()
-        r = np.asarray(ret_t, dtype=np.float64)
-        n = len(s)
-        k = min(max(1, int(q * n)), n // 2)
-        w = np.zeros(n, dtype=np.float64)
-        if k > 0:
-            long_idx = np.argpartition(s, n - k)[-k:]
-            short_idx = np.argpartition(s, k - 1)[:k]
-            w[long_idx] = 1.0 / (2 * k)
-            w[short_idx] = -1.0 / (2 * k)
-        weight_by_asset = {str(asset_id): float(weight) for asset_id, weight in zip(ids_t, w)}
-        if prev_w is None:
-            turnover = float(np.abs(w).sum())
-        elif isinstance(prev_w, dict):
-            universe = set(prev_w).union(weight_by_asset)
-            turnover = float(sum(abs(weight_by_asset.get(asset_id, 0.0) - prev_w.get(asset_id, 0.0)) for asset_id in universe))
-        else:
-            turnover = float(np.abs(w - prev_w).sum())
-        prev_w = weight_by_asset
-        daily.append(float(w @ r - turnover * cost_bps / 10000.0))
+        s = _as_numpy(score_t)
+        r = _as_numpy(ret_t)
+        daily_return, prev_w = daily_long_short_return(score_t, ret_t, prev_w, ids_t, q=q, cost_bps=cost_bps)
+        daily.append(daily_return)
         y = label_t.numpy()
         buy = s > np.quantile(s, 0.8)
         mask = buy & np.isin(y, [0, 1])
@@ -87,3 +111,9 @@ def trading_metrics(
         "tail_loss_5pct": float(np.quantile(arr, 0.05)) if arr.size else 0.0,
         "fp_buy_loss": float(np.mean(fp_buy_losses)) if fp_buy_losses else 0.0,
     }
+
+
+def _as_numpy(value: torch.Tensor | np.ndarray) -> np.ndarray:
+    if isinstance(value, torch.Tensor):
+        return value.detach().cpu().numpy()
+    return np.asarray(value, dtype=np.float64)
