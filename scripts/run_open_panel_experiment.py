@@ -307,7 +307,7 @@ def variant_config(variant: str, seed: int) -> FinTTAConfig:
     elif variant == "fintta_no_teacher":
         cfg.alpha_teacher = 0.0
     elif variant == "tent_lite":
-        cfg.same_batch_adaptation = False
+        cfg.same_batch_adaptation = True
         cfg.rho_lambda = 0.0
         cfg.risk_temperature = 1e6
         cfg.alpha_graph = 0.0
