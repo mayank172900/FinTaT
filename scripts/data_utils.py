@@ -270,7 +270,7 @@ def add_causal_features(frame: pd.DataFrame) -> pd.DataFrame:
     for window in [5, 20, 60]:
         df[f"feat_momentum_{window}"] = rolling_sum_by_asset(df, "ret_1d", window)
 
-    df["feat_reversal_1"] = -df["feat_ret_lag_1"]
+    df["feat_reversal_1"] = -(df["feat_ret_lag_1"] - df["feat_momentum_5"] / 5.0)
 
     for window in [5, 20, 60, 252]:
         vol = np.sqrt(rolling_mean_by_asset(df.assign(_ret_sq=df["ret_1d"] ** 2), "_ret_sq", window))
