@@ -181,8 +181,8 @@
           "std": 0.005251781662427012
         },
         "feat_reversal_1": {
-          "mean": -0.0009582658800970981,
-          "std": 0.013097992075345309
+          "mean": -0.00029716926696680485,
+          "std": 0.011744036990369208
         },
         "feat_sales_growth": {
           "mean": 0.029629825400433872,
@@ -419,8 +419,8 @@
           "std": 0.012675899619128135
         },
         "feat_reversal_1": {
-          "mean": 0.004607663025400469,
-          "std": 0.022953227666921584
+          "mean": 0.0009636035542715548,
+          "std": 0.01707239065976622
         },
         "feat_sales_growth": {
           "mean": 0.029630080992141084,
@@ -623,12 +623,12 @@
   "graph": {
     "available": true,
     "average_correlation_by_date_available": "rolling_corr flags are encoded in edge_source_flags",
-    "edge_count": 3139,
+    "edge_count": 3192,
     "edge_count_per_date_summary": {
       "max": 28.0,
-      "median": 27.0,
+      "median": 28.0,
       "min": 21.0,
-      "p25": 27.0,
+      "p25": 28.0,
       "p75": 28.0
     },
     "isolated_asset_count_top10_dates": {
@@ -644,17 +644,17 @@
       "2019-10-14": 0
     },
     "negative_edges": 4,
-    "positive_edges": 3135,
-    "positive_negative_ratio": 783.75,
+    "positive_edges": 3188,
+    "positive_negative_ratio": 797.0,
     "top_connected_assets": {
-      "SAMP001": 815,
-      "SAMP002": 798,
-      "SAMP003": 782,
+      "SAMP001": 816,
+      "SAMP002": 816,
+      "SAMP003": 816,
       "SAMP004": 816,
       "SAMP005": 816,
-      "SAMP006": 786,
-      "SAMP007": 797,
-      "SAMP008": 668
+      "SAMP006": 816,
+      "SAMP007": 816,
+      "SAMP008": 672
     }
   },
   "leakage": {
