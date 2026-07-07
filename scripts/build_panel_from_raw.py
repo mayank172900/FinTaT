@@ -10,6 +10,7 @@ from data_utils import (
     ASSET_COLUMN,
     DATE_COLUMN,
     build_sample_panel,
+    ensure_datetime,
     feature_metadata,
     label_metadata,
     load_config,
@@ -88,7 +89,13 @@ def normalize_intermediate_tables(config: dict) -> None:
                 table = normalize_open_macro(table, raw_inputs.get("factor_returns"))
             elif key == "short_interest":
                 table = normalize_short_interest(table)
-            write_table(sort_panel(table) if key != "macro" else table, intermediate_dir / filename)
+            if key == "macro":
+                normalized = table
+            elif ASSET_COLUMN in table.columns:
+                normalized = sort_panel(table)
+            else:
+                normalized = ensure_datetime(table).sort_values(DATE_COLUMN).reset_index(drop=True)
+            write_table(normalized, intermediate_dir / filename)
 
 
 def normalize_prices(prices: pd.DataFrame) -> pd.DataFrame:
