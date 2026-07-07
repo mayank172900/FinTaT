@@ -1,12 +1,12 @@
 {
-  "active_rows": 1203197,
+  "active_rows": 1134382,
   "asset_id_rule": "Use stable PERMNO/FIGI/vendor security id; tickers are descriptive and may change.",
-  "assets": 598,
-  "dataset_grade": "open-data-prototype",
+  "assets": 460,
+  "dataset_grade": "prototype-grade",
   "date_max": "2024-12-31",
   "date_min": "2014-01-02",
   "delisting_return_rows": 0,
   "inactive_rows": 0,
-  "rows": 1563085,
+  "rows": 1251504,
   "survivorship_rule": "Inactive/delisted securities must remain in historical rows when supported by the source."
 }

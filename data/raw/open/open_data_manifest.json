@@ -1,381 +1,197 @@
 {
-  "created_utc": "2026-05-01T17:45:42.118909+00:00",
-  "dataset_grade": "open-data-prototype / survivor-bias-reduced, not CRSP-grade",
-  "downloaded_sources": [
+  "created_utc": "2026-07-07T20:13:52.629492+00:00",
+  "dataset_grade": "open-data-prototype",
+  "end": "2024-12-31",
+  "important_caveats": [
+    "This is not CRSP-grade and is not fully survivor-bias-free.",
+    "Yahoo/yfinance prices may omit or truncate delisted ticker history.",
+    "S&P 500 sector/industry fields come from current public metadata unless a paid PIT source is supplied.",
+    "FINRA CNMS short-volume files begin in 2018 and are short-sale volume, not short interest or borrow cost.",
+    "SEC ticker mapping is downloaded; full EDGAR company facts are not bulk-downloaded by default because they are large."
+  ],
+  "sources": [
     {
-      "files": [
-        "data/raw/open/sp500_history_fja05680.csv",
-        "data/raw/open/sp500_current_wikipedia_fja05680.csv",
-        "data/raw/open/sp500_ticker_start_end_fja05680.csv"
-      ],
-      "purpose": "PIT S&P 500 constituent proxy and current public sector metadata",
-      "source": "fja05680/sp500"
+      "name": "sp500_history",
+      "note": "PIT S&P 500 components from fja05680/sp500.",
+      "path": "data/raw/open/sp500_history_fja05680.csv",
+      "rows": 2595,
+      "status": "downloaded"
     },
     {
-      "files": [
-        "data/raw/open_prices_daily.parquet"
-      ],
-      "purpose": "daily OHLCV/actions for available PIT S&P tickers",
-      "source": "Yahoo Finance via yfinance"
+      "name": "sp500_current",
+      "note": "Current S&P 500 metadata from fja05680/sp500.",
+      "path": "data/raw/open/sp500_current_wikipedia_fja05680.csv",
+      "rows": 503,
+      "status": "downloaded"
     },
     {
-      "files": [
-        "data/raw/open/cboe_vix_history.csv",
-        "data/intermediate/vix_daily.parquet"
-      ],
-      "purpose": "VIX regime/risk feature",
-      "source": "Cboe VIX history"
+      "name": "sp500_ticker_start_end",
+      "note": "Ticker membership intervals from fja05680/sp500.",
+      "path": "data/raw/open/sp500_ticker_start_end_fja05680.csv",
+      "rows": 1255,
+      "status": "downloaded"
     },
     {
-      "files": [
-        "data/raw/open/fred_*.csv",
-        "data/raw/fred_macro_asof_or_latest.parquet",
-        "data/intermediate/macro_asof.parquet"
-      ],
-      "purpose": "macro/rates/credit/VIX/oil/USD features; not ALFRED vintage",
-      "source": "FRED latest/revised CSV"
+      "name": "open_universe_daily",
+      "note": "Daily PIT S&P 500 universe, business-day expanded.",
+      "path": "data/raw/open_universe_daily.parquet",
+      "rows": 1454357,
+      "status": "created"
     },
     {
-      "files": [
-        "data/raw/open/kenneth_french_ff5_daily.zip",
-        "data/raw/open/kenneth_french_momentum_daily.zip",
-        "data/raw/kenneth_french_daily_factors.parquet",
-        "data/intermediate/factor_returns.parquet"
-      ],
-      "purpose": "daily FF5, momentum, risk-free factor returns",
-      "source": "Kenneth French Data Library"
+      "name": "cboe_vix",
+      "note": "Cboe VIX daily OHLC filtered to requested period.",
+      "path": "data/intermediate/vix_daily.parquet",
+      "rows": 2787,
+      "status": "downloaded"
     },
     {
-      "files": [
-        "data/raw/finra_cnms_short_volume.parquet",
-        "data/intermediate/short_interest_daily.parquet"
-      ],
-      "purpose": "short-sale volume proxy, 2018-08-01 onward",
-      "source": "FINRA CNMS daily short-sale volume CDN"
+      "name": "fred_FEDFUNDS",
+      "note": "Effective Federal Funds Rate",
+      "path": "data/raw/open/fred_FEDFUNDS.csv",
+      "rows": 864,
+      "status": "downloaded"
     },
     {
-      "files": [
-        "data/raw/open/sec_company_tickers.json"
-      ],
-      "purpose": "ticker-to-CIK mapping only",
-      "source": "SEC company_tickers.json"
+      "name": "fred_DGS3MO",
+      "note": "3-month Treasury constant maturity",
+      "path": "data/raw/open/fred_DGS3MO.csv",
+      "rows": 11698,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_DGS2",
+      "note": "2-year Treasury constant maturity",
+      "path": "data/raw/open/fred_DGS2.csv",
+      "rows": 13068,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_DGS10",
+      "note": "10-year Treasury constant maturity",
+      "path": "data/raw/open/fred_DGS10.csv",
+      "rows": 16828,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_T10Y2Y",
+      "note": "10-year minus 2-year Treasury",
+      "path": "data/raw/open/fred_T10Y2Y.csv",
+      "rows": 13070,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_T10Y3M",
+      "note": "10-year minus 3-month Treasury",
+      "path": "data/raw/open/fred_T10Y3M.csv",
+      "rows": 11611,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_BAA10Y",
+      "note": "Moody's Baa corporate bond minus 10-year Treasury",
+      "path": "data/raw/open/fred_BAA10Y.csv",
+      "rows": 10565,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_AAA10Y",
+      "note": "Moody's Aaa corporate bond minus 10-year Treasury",
+      "path": "data/raw/open/fred_AAA10Y.csv",
+      "rows": 11348,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_VIXCLS",
+      "note": "Cboe VIX close from FRED",
+      "path": "data/raw/open/fred_VIXCLS.csv",
+      "rows": 9525,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_NFCI",
+      "note": "Chicago Fed National Financial Conditions Index",
+      "path": "data/raw/open/fred_NFCI.csv",
+      "rows": 2895,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_UNRATE",
+      "note": "Unemployment rate",
+      "path": "data/raw/open/fred_UNRATE.csv",
+      "rows": 942,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_CPIAUCSL",
+      "note": "CPI all urban consumers",
+      "path": "data/raw/open/fred_CPIAUCSL.csv",
+      "rows": 953,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_INDPRO",
+      "note": "Industrial production",
+      "path": "data/raw/open/fred_INDPRO.csv",
+      "rows": 1289,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_DCOILWTICO",
+      "note": "WTI crude oil",
+      "path": "data/raw/open/fred_DCOILWTICO.csv",
+      "rows": 10563,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_DTWEXBGS",
+      "note": "Trade weighted U.S. dollar index",
+      "path": "data/raw/open/fred_DTWEXBGS.csv",
+      "rows": 5349,
+      "status": "downloaded"
+    },
+    {
+      "name": "fred_macro_asof_or_latest",
+      "note": "FRED latest/revised values; use ALFRED for true vintage macro.",
+      "path": "data/raw/fred_macro_asof_or_latest.parquet",
+      "rows": 2907,
+      "status": "created"
+    },
+    {
+      "name": "kenneth_french_ff5_daily",
+      "note": "Kenneth French Data Library daily factor file.",
+      "path": "data/raw/open/kenneth_french_ff5_daily.zip",
+      "rows": 2768,
+      "status": "downloaded"
+    },
+    {
+      "name": "kenneth_french_momentum_daily",
+      "note": "Kenneth French Data Library daily factor file.",
+      "path": "data/raw/open/kenneth_french_momentum_daily.zip",
+      "rows": 0,
+      "status": "downloaded"
+    },
+    {
+      "name": "kenneth_french_daily_factors",
+      "note": "Merged FF5 daily and momentum daily factors.",
+      "path": "data/raw/kenneth_french_daily_factors.parquet",
+      "rows": 2768,
+      "status": "created"
+    },
+    {
+      "name": "sec_company_tickers",
+      "note": "SEC ticker to CIK mapping; full company facts are intentionally not bulk-downloaded.",
+      "path": "data/raw/open/sec_company_tickers.json",
+      "rows": 10415,
+      "status": "downloaded"
+    },
+    {
+      "name": "finra_cnms_short_volume",
+      "note": "FINRA consolidated NMS daily short-sale volume, available from 2018.",
+      "path": "data/raw/finra_cnms_short_volume.parquet",
+      "rows": 824358,
+      "status": "created"
     }
   ],
-  "files": {
-    "data/intermediate/factor_returns.parquet": {
-      "bytes": 60633,
-      "rows": 2768
-    },
-    "data/intermediate/labels_daily.parquet": {
-      "bytes": 82046816,
-      "rows": 1563085
-    },
-    "data/intermediate/macro_asof.parquet": {
-      "bytes": 117592,
-      "rows": 2907
-    },
-    "data/intermediate/market_state_daily.parquet": {
-      "bytes": 544299,
-      "rows": 2768
-    },
-    "data/intermediate/prices_daily.parquet": {
-      "bytes": 115158080,
-      "rows": 1563085
-    },
-    "data/intermediate/short_interest_daily.parquet": {
-      "bytes": 21880148,
-      "rows": 1005056
-    },
-    "data/intermediate/universe_daily.parquet": {
-      "bytes": 859626,
-      "rows": 1445545
-    },
-    "data/intermediate/vix_daily.parquet": {
-      "bytes": 68621,
-      "rows": 2787
-    },
-    "data/processed/data_validation_report.json": {
-      "bytes": 33684
-    },
-    "data/processed/data_validation_report.md": {
-      "bytes": 1899
-    },
-    "data/processed/feature_metadata.json": {
-      "bytes": 2169
-    },
-    "data/processed/label_metadata.json": {
-      "bytes": 727
-    },
-    "data/processed/panel_daily_2015_2024.parquet": {
-      "bytes": 818495176,
-      "rows": 1563085
-    },
-    "data/processed/source_train_2015_2019.parquet": {
-      "bytes": 365115920,
-      "rows": 704655
-    },
-    "data/processed/tta_test_2020_2024.parquet": {
-      "bytes": 385941803,
-      "rows": 722308
-    },
-    "data/processed/universe_metadata.json": {
-      "bytes": 436
-    },
-    "data/raw/finra_cnms_short_volume.parquet": {
-      "bytes": 21880148,
-      "rows": 1005056
-    },
-    "data/raw/fred_macro_asof_or_latest.parquet": {
-      "bytes": 147562,
-      "rows": 2907
-    },
-    "data/raw/kenneth_french_daily_factors.parquet": {
-      "bytes": 60633,
-      "rows": 2768
-    },
-    "data/raw/open/cboe_vix_history.csv": {
-      "bytes": 467668
-    },
-    "data/raw/open/finra_download_report.json": {
-      "bytes": 4138
-    },
-    "data/raw/open/fred_AAA10Y.csv": {
-      "bytes": 179009
-    },
-    "data/raw/open/fred_BAA10Y.csv": {
-      "bytes": 166588
-    },
-    "data/raw/open/fred_CPIAUCSL.csv": {
-      "bytes": 17649
-    },
-    "data/raw/open/fred_DCOILWTICO.csv": {
-      "bytes": 177537
-    },
-    "data/raw/open/fred_DGS10.csv": {
-      "bytes": 267159
-    },
-    "data/raw/open/fred_DGS2.csv": {
-      "bytes": 207332
-    },
-    "data/raw/open/fred_DGS3MO.csv": {
-      "bytes": 184883
-    },
-    "data/raw/open/fred_DTWEXBGS.csv": {
-      "bytes": 102269
-    },
-    "data/raw/open/fred_FEDFUNDS.csv": {
-      "bytes": 13863
-    },
-    "data/raw/open/fred_INDPRO.csv": {
-      "bytes": 24340
-    },
-    "data/raw/open/fred_NFCI.csv": {
-      "bytes": 51121
-    },
-    "data/raw/open/fred_T10Y2Y.csv": {
-      "bytes": 208249
-    },
-    "data/raw/open/fred_T10Y3M.csv": {
-      "bytes": 184357
-    },
-    "data/raw/open/fred_UNRATE.csv": {
-      "bytes": 14121
-    },
-    "data/raw/open/fred_VIXCLS.csv": {
-      "bytes": 159572
-    },
-    "data/raw/open/kenneth_french_ff5_daily.zip": {
-      "bytes": 149059
-    },
-    "data/raw/open/kenneth_french_momentum_daily.zip": {
-      "bytes": 84724
-    },
-    "data/raw/open/sec_company_tickers.json": {
-      "bytes": 790480
-    },
-    "data/raw/open/sp500_current_wikipedia_fja05680.csv": {
-      "bytes": 53652
-    },
-    "data/raw/open/sp500_history_fja05680.csv": {
-      "bytes": 5499082
-    },
-    "data/raw/open/sp500_ticker_start_end_fja05680.csv": {
-      "bytes": 27628
-    },
-    "data/raw/open/yfinance_failed_tickers.json": {
-      "bytes": 1726
-    },
-    "data/raw/open_prices_daily.parquet": {
-      "bytes": 115158080,
-      "rows": 1563085
-    },
-    "data/raw/open_universe_daily.parquet": {
-      "bytes": 859626,
-      "rows": 1445545
-    }
-  },
-  "not_downloaded_or_not_available_without_keys_or_large_bulk": [
-    "CRSP daily/delistings: proprietary, no free equivalent",
-    "CRSP/Compustat Merged: proprietary; free EDGAR fundamentals not bulk-built here",
-    "NYSE TAQ: proprietary; daily OHLCV liquidity proxies used instead",
-    "Point-in-time GICS/TRBC: proprietary; current public sector metadata used as prototype fallback",
-    "I/B/E/S: proprietary; no full free equivalent downloaded",
-    "Borrow fees/DataLend/Securities Finance: proprietary; FINRA short-sale volume proxy used",
-    "SEC 13F/N-PORT full holdings bulk: public but multi-GB for full period; downloader references retained, not bulk-downloaded into this repo by default",
-    "ALFRED vintages: not pulled through API key; FRED latest/revised values used and marked prototype-only"
-  ],
-  "period_requested": "2014-01-01 to 2024-12-31",
-  "yfinance_failed_or_empty_tickers": [
-    "AABA",
-    "ABC",
-    "ABMD",
-    "ADS",
-    "AGN",
-    "ALTR",
-    "ALXN",
-    "ANSS",
-    "ANTM",
-    "APC",
-    "ARG",
-    "ARNC",
-    "ATVI",
-    "AVP",
-    "BCR",
-    "BHGE",
-    "BLL",
-    "BRCM",
-    "BTUUQ",
-    "BXLT",
-    "CAM",
-    "CBS",
-    "CDAY",
-    "CELG",
-    "CERN",
-    "CFN",
-    "CHK",
-    "CHTR",
-    "CMA",
-    "CMCSK",
-    "COG",
-    "COV",
-    "CPGX",
-    "CTL",
-    "CTLT",
-    "CTXS",
-    "CVC",
-    "CXO",
-    "DAY",
-    "DFS",
-    "DISCA",
-    "DISCK",
-    "DISH",
-    "DNB",
-    "DNR",
-    "DO",
-    "DRE",
-    "DTV",
-    "DWDP",
-    "ENDP",
-    "ESV",
-    "ETFC",
-    "FB",
-    "FBHS",
-    "FDO",
-    "FI",
-    "FL",
-    "FLIR",
-    "FLT",
-    "FRC",
-    "FRX",
-    "FTR",
-    "GAS",
-    "GGP",
-    "GMCR",
-    "GPS",
-    "HBI",
-    "HCBK",
-    "HCP",
-    "HES",
-    "HFC",
-    "HRS",
-    "HSP",
-    "IGT",
-    "IPG",
-    "JEC",
-    "JNPR",
-    "JOY",
-    "JWN",
-    "K",
-    "KORS",
-    "KRFT",
-    "KSU",
-    "LIFE",
-    "LLL",
-    "LLTC",
-    "LM",
-    "LO",
-    "LSI",
-    "LVLT",
-    "MJN",
-    "MMC",
-    "MNK",
-    "MON",
-    "MRO",
-    "MWV",
-    "MXIM",
-    "MYL",
-    "NBL",
-    "NLOK",
-    "NLSN",
-    "PARA",
-    "PBCT",
-    "PCL",
-    "PCP",
-    "PDCO",
-    "PEAK",
-    "PETM",
-    "PKI",
-    "PLL",
-    "POM",
-    "PX",
-    "PXD",
-    "QEP",
-    "RAI",
-    "RDC",
-    "RE",
-    "RHT",
-    "RTN",
-    "SIAL",
-    "SIVB",
-    "SNDK",
-    "SNI",
-    "SPLS",
-    "SRCL",
-    "STJ",
-    "SWN",
-    "SWY",
-    "SYMC",
-    "TIF",
-    "TMK",
-    "TSS",
-    "TWC",
-    "TWTR",
-    "UTX",
-    "VAR",
-    "VIAB",
-    "VIAC",
-    "WBA",
-    "WCG",
-    "WFM",
-    "WIN",
-    "WLTW",
-    "WPX",
-    "WRK",
-    "WYND",
-    "X",
-    "XEC",
-    "XL",
-    "XLNX"
-  ],
-  "yfinance_failed_or_empty_tickers_count": 150
+  "start": "2014-01-01"
 }
