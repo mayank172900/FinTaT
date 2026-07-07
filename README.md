@@ -2,6 +2,8 @@
 
 FinTaT is my research prototype for **fully source-free test-time adaptation on financial tabular data**.
 
+Naming note: **FinTaT** is the repository/project name, **`fintta`** is the Python package, and **FinTTA** is the method implemented here.
+
 The original question was simple:
 
 > If a financial model is trained on one market regime, can it adapt online during deployment using only the unlabeled market stream?
@@ -250,7 +252,7 @@ pytest -q
 Current local verification:
 
 ```text
-6 passed
+24 passed
 ```
 
 ## Rebuild The Open-Data Prototype
@@ -375,4 +377,3 @@ The negative result is useful because it narrows the space. It suggests that for
 - or supervised periodic recalibration rather than fully source-free adaptation.
 
 For now, this repo preserves the implementation, the benchmark pipeline, and the empirical failure mode clearly.
-
