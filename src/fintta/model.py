@@ -3,8 +3,8 @@ from __future__ import annotations
 import copy
 
 import torch
-from torch import nn
 import torch.nn.functional as F
+from torch import nn
 
 
 class AdapterBlock(nn.Module):
@@ -45,6 +45,7 @@ class AdaptableMLP(nn.Module):
         self.head = nn.Linear(last, num_classes)
         self.logit_bias = nn.Parameter(torch.zeros(num_classes))
         self.log_temperature = nn.Parameter(torch.zeros(()))
+        self._adaptation_parameter_names = self._collect_adaptation_parameter_names()
 
     def forward(self, x: torch.Tensor, return_features: bool = False) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         x = (x + self.input_shift) * self.input_scale_log.exp().clamp(0.2, 5.0)
@@ -59,17 +60,19 @@ class AdaptableMLP(nn.Module):
         for name, param in self.named_parameters():
             param.requires_grad = self.is_adaptation_parameter(name)
 
-    @staticmethod
-    def is_adaptation_parameter(name: str) -> bool:
-        if name in {"input_shift", "input_scale_log", "logit_bias", "log_temperature"}:
-            return True
-        if ".bias" in name and "head" in name:
-            return True
-        if "backbone" in name and (".1.weight" in name or ".1.bias" in name):
-            return True
-        if "down.weight" in name or "up.weight" in name:
-            return True
-        return False
+    def is_adaptation_parameter(self, name: str) -> bool:
+        return name in self._adaptation_parameter_names
+
+    def _collect_adaptation_parameter_names(self) -> set[str]:
+        names = {"input_shift", "input_scale_log", "logit_bias", "log_temperature", "head.bias"}
+        for module_name, module in self.named_modules():
+            if isinstance(module, nn.LayerNorm):
+                names.add(f"{module_name}.weight")
+                names.add(f"{module_name}.bias")
+            elif isinstance(module, AdapterBlock):
+                names.add(f"{module_name}.down.weight")
+                names.add(f"{module_name}.up.weight")
+        return names
 
     def adaptation_state(self) -> dict[str, torch.Tensor]:
         return {n: p.detach().clone() for n, p in self.named_parameters() if self.is_adaptation_parameter(n)}
@@ -83,7 +86,7 @@ class AdaptableMLP(nn.Module):
     def zero_adaptation_state(self) -> dict[str, torch.Tensor]:
         return {name: torch.zeros_like(value) for name, value in self.adaptation_state().items()}
 
-    def clone(self) -> "AdaptableMLP":
+    def clone(self) -> AdaptableMLP:
         return copy.deepcopy(self)
 
 
