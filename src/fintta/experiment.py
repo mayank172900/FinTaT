@@ -34,6 +34,7 @@ def run_no_adaptation(model: AdaptableMLP, batches, num_classes: int) -> dict[st
     labels = []
     scores = []
     fwd = []
+    asset_ids = []
     exposure = torch.tensor(FinTTAConfig(num_classes=num_classes).ordinal_exposure)
     model.eval()
     for b in batches:
@@ -42,8 +43,9 @@ def run_no_adaptation(model: AdaptableMLP, batches, num_classes: int) -> dict[st
         labels.append(b.labels.cpu())
         scores.append(p @ exposure)
         fwd.append(b.forward_returns)
+        asset_ids.append(b.asset_ids)
     out = classification_metrics(probs, labels, num_classes)
-    out.update({f"trade_{k}": v for k, v in trading_metrics(scores, fwd, labels).items()})
+    out.update({f"trade_{k}": v for k, v in trading_metrics(scores, fwd, labels, asset_ids=asset_ids).items()})
     return out
 
 
@@ -53,6 +55,7 @@ def run_fintta(model: AdaptableMLP, batches, config: FinTTAConfig) -> tuple[dict
     labels = []
     scores = []
     fwd = []
+    asset_ids = []
     diagnostics = []
     for t, batch in enumerate(batches):
         out = engine.step(batch, adapt=True)
@@ -60,6 +63,7 @@ def run_fintta(model: AdaptableMLP, batches, config: FinTTAConfig) -> tuple[dict
         labels.append(batch.labels.cpu())
         scores.append(out.scores)
         fwd.append(batch.forward_returns)
+        asset_ids.append(batch.asset_ids)
         diagnostics.append(
             {
                 "t": t,
@@ -71,7 +75,7 @@ def run_fintta(model: AdaptableMLP, batches, config: FinTTAConfig) -> tuple[dict
             }
         )
     metrics = classification_metrics(probs, labels, config.num_classes)
-    metrics.update({f"trade_{k}": v for k, v in trading_metrics(scores, fwd, labels).items()})
+    metrics.update({f"trade_{k}": v for k, v in trading_metrics(scores, fwd, labels, asset_ids=asset_ids).items()})
     metrics["regimes_used"] = float(len(set(d["regime"] for d in diagnostics)))
     metrics["adapt_rate"] = float(sum(d["adapted"] for d in diagnostics) / max(len(diagnostics), 1))
     metrics["mean_shock"] = float(sum(d["shock"] for d in diagnostics) / max(len(diagnostics), 1))
@@ -90,6 +94,7 @@ def run_fintta_with_source_state(
     labels = []
     scores = []
     fwd = []
+    asset_ids = []
     diagnostics = []
     for t, batch in enumerate(test_batches):
         out = engine.step(batch, adapt=True)
@@ -97,6 +102,7 @@ def run_fintta_with_source_state(
         labels.append(batch.labels.cpu())
         scores.append(out.scores)
         fwd.append(batch.forward_returns)
+        asset_ids.append(batch.asset_ids)
         diagnostics.append(
             {
                 "t": t,
@@ -108,7 +114,7 @@ def run_fintta_with_source_state(
             }
         )
     metrics = classification_metrics(probs, labels, config.num_classes)
-    metrics.update({f"trade_{k}": v for k, v in trading_metrics(scores, fwd, labels).items()})
+    metrics.update({f"trade_{k}": v for k, v in trading_metrics(scores, fwd, labels, asset_ids=asset_ids).items()})
     metrics["regimes_used"] = float(len(set(d["regime"] for d in diagnostics)))
     metrics["adapt_rate"] = float(sum(d["adapted"] for d in diagnostics) / max(len(diagnostics), 1))
     metrics["mean_shock"] = float(sum(d["shock"] for d in diagnostics) / max(len(diagnostics), 1))

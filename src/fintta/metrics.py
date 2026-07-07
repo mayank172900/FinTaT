@@ -37,24 +37,35 @@ def trading_metrics(
     scores: list[torch.Tensor],
     forward_returns: list[np.ndarray],
     labels: list[torch.Tensor],
+    asset_ids: list[list[str]] | None = None,
     q: float = 0.2,
     cost_bps: float = 10.0,
 ) -> dict[str, float]:
     daily = []
     fp_buy_losses = []
-    prev_w = None
-    for score_t, ret_t, label_t in zip(scores, forward_returns, labels):
+    prev_w: dict[str, float] | np.ndarray | None = None
+    if asset_ids is None:
+        asset_ids = [[str(i) for i in range(len(score_t))] for score_t in scores]
+    for score_t, ret_t, label_t, ids_t in zip(scores, forward_returns, labels, asset_ids):
         s = score_t.numpy()
         r = np.asarray(ret_t, dtype=np.float64)
         n = len(s)
-        k = max(1, int(q * n))
-        long_idx = np.argpartition(s, -k)[-k:]
-        short_idx = np.argpartition(s, k)[:k]
+        k = min(max(1, int(q * n)), n // 2)
         w = np.zeros(n, dtype=np.float64)
-        w[long_idx] = 1.0 / (2 * k)
-        w[short_idx] = -1.0 / (2 * k)
-        turnover = np.abs(w - prev_w).sum() if prev_w is not None else np.abs(w).sum()
-        prev_w = w
+        if k > 0:
+            long_idx = np.argpartition(s, n - k)[-k:]
+            short_idx = np.argpartition(s, k - 1)[:k]
+            w[long_idx] = 1.0 / (2 * k)
+            w[short_idx] = -1.0 / (2 * k)
+        weight_by_asset = {str(asset_id): float(weight) for asset_id, weight in zip(ids_t, w)}
+        if prev_w is None:
+            turnover = float(np.abs(w).sum())
+        elif isinstance(prev_w, dict):
+            universe = set(prev_w).union(weight_by_asset)
+            turnover = float(sum(abs(weight_by_asset.get(asset_id, 0.0) - prev_w.get(asset_id, 0.0)) for asset_id in universe))
+        else:
+            turnover = float(np.abs(w - prev_w).sum())
+        prev_w = weight_by_asset
         daily.append(float(w @ r - turnover * cost_bps / 10000.0))
         y = label_t.numpy()
         buy = s > np.quantile(s, 0.8)

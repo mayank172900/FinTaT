@@ -209,6 +209,7 @@ def run_engine_variant(
     labels = []
     scores = []
     fwd = []
+    asset_ids = []
     diagnostics = []
     for t, batch in enumerate(test_batches):
         out = engine.step(batch, adapt=True)
@@ -216,6 +217,7 @@ def run_engine_variant(
         labels.append(batch.labels.cpu())
         scores.append(out.scores)
         fwd.append(batch.forward_returns)
+        asset_ids.append(batch.asset_ids)
         diagnostics.append(
             {
                 "t": t,
@@ -229,7 +231,7 @@ def run_engine_variant(
         if (t + 1) % 100 == 0:
             print(f"  day {t + 1}/{len(test_batches)} regime={out.regime} shock={out.shock:.3f} adapted={out.adapted}")
     metrics = classification_metrics(probs, labels, 5)
-    metrics.update({f"trade_{k}": v for k, v in trading_metrics(scores, fwd, labels).items()})
+    metrics.update({f"trade_{k}": v for k, v in trading_metrics(scores, fwd, labels, asset_ids=asset_ids).items()})
     metrics["regimes_used"] = float(len(set(d["regime"] for d in diagnostics)))
     metrics["adapt_rate"] = float(sum(d["adapted"] for d in diagnostics) / max(len(diagnostics), 1))
     metrics["mean_shock"] = float(sum(d["shock"] for d in diagnostics) / max(len(diagnostics), 1))
