@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
 import torch
 
 from .types import AssetBatch
-
 
 REQUIRED_PANEL_COLUMNS = {"date", "asset_id", "ret_1d", "volume", "sector", "industry"}
 
@@ -37,12 +36,14 @@ class PanelDataset:
         missing = REQUIRED_PANEL_COLUMNS.difference(frame.columns)
         if missing:
             raise ValueError(f"panel is missing required columns: {sorted(missing)}")
-        self.frame = frame.sort_values(["date", "asset_id"]).reset_index(drop=True)
+        self.frame = frame.copy()
+        self.frame["asset_id"] = self.frame["asset_id"].astype(str)
+        self.frame = self.frame.sort_values(["date", "asset_id"]).reset_index(drop=True)
         self.spec = spec
         self._validate()
 
     @classmethod
-    def from_path(cls, path: str | Path, spec: PanelSpec) -> "PanelDataset":
+    def from_path(cls, path: str | Path, spec: PanelSpec) -> PanelDataset:
         path = Path(path)
         if path.suffix.lower() == ".parquet":
             frame = pd.read_parquet(path)
@@ -194,7 +195,7 @@ def make_synthetic_market(
             features[:, t, 8] = vol
             features[:, t, 9] = crowd
             features[:, t, 10:] = rng.normal(0, 0.1, size=(n_assets, input_dim - 10))
-    labels = _future_bucket_labels(returns, horizon=1, num_classes=num_classes)
+    labels = _future_bucket_labels(returns, horizon=1, num_classes=num_classes, calibration_end=source_days + lookback)
     batches: list[AssetBatch] = []
     for t in range(lookback, total_days - 1):
         start = t - lookback + 1
@@ -237,10 +238,21 @@ def source_training_tensors(batches: list[AssetBatch]) -> tuple[torch.Tensor, to
     return x, y
 
 
-def _future_bucket_labels(returns: np.ndarray, horizon: int, num_classes: int) -> np.ndarray:
+def _future_bucket_labels(
+    returns: np.ndarray,
+    horizon: int,
+    num_classes: int,
+    calibration_end: int | None = None,
+) -> np.ndarray:
     fwd = np.roll(returns, -horizon, axis=1)
     labels = np.zeros_like(returns, dtype=np.int64)
-    cuts = np.quantile(fwd[:, :-horizon].ravel(), np.linspace(0, 1, num_classes + 1)[1:-1])
+    valid = fwd[:, :-horizon]
+    if calibration_end is not None:
+        end = max(1, min(calibration_end, valid.shape[1]))
+        calibration = valid[:, :end]
+    else:
+        calibration = valid
+    cuts = np.quantile(calibration.ravel(), np.linspace(0, 1, num_classes + 1)[1:-1])
     labels[:, :-horizon] = np.digitize(fwd[:, :-horizon], cuts)
     labels[:, -horizon:] = num_classes // 2
     return labels
