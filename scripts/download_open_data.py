@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import io
 import json
+import os
 import time
 import zipfile
 from dataclasses import asdict, dataclass
@@ -15,7 +16,7 @@ import yfinance as yf
 
 START = "2014-01-01"
 END = "2024-12-31"
-USER_AGENT = "FinTTA academic open-data prototype; contact: local research repo"
+USER_AGENT = os.environ.get("FINTAT_HTTP_USER_AGENT", "FinTaT research mayankforms708@gmail.com")
 
 SP500_HISTORY_URL = (
     "https://raw.githubusercontent.com/fja05680/sp500/master/"
@@ -100,7 +101,10 @@ def main() -> None:
     download_vix(session, raw_dir, intermediate_dir, records, args.start, args.end)
     download_fred(session, raw_dir, normalized_dir, records, args.start, args.end)
     download_french(session, raw_dir, normalized_dir, records, args.start, args.end)
-    download_sec_ticker_map(session, raw_dir, records)
+    try:
+        download_sec_ticker_map(session, raw_dir, records)
+    except Exception as exc:
+        records.append(SourceRecord("sec_company_tickers", "failed", None, None, str(exc)))
     if not args.skip_finra:
         download_finra_short_volume(session, raw_dir, normalized_dir, tickers, args.finra_start, args.finra_end, records)
 
@@ -479,14 +483,23 @@ def fetch_csv(session: requests.Session, url: str, path: Path, timeout: int = 30
     return pd.read_csv(io.BytesIO(content))
 
 
-def fetch_bytes(session: requests.Session, url: str, path: Path, timeout: int = 30) -> bytes:
+def fetch_bytes(session: requests.Session, url: str, path: Path, timeout: int = 30, attempts: int = 3) -> bytes:
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() and path.stat().st_size > 0:
         return path.read_bytes()
-    response = session.get(url, timeout=timeout)
-    response.raise_for_status()
-    path.write_bytes(response.content)
-    return response.content
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            response = session.get(url, timeout=timeout)
+            response.raise_for_status()
+            path.write_bytes(response.content)
+            return response.content
+        except requests.RequestException as exc:
+            last_error = exc
+            if attempt < attempts - 1:
+                time.sleep(2.0 * (attempt + 1))
+    assert last_error is not None
+    raise last_error
 
 
 def parse_french_zip(content: bytes) -> pd.DataFrame:
