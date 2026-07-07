@@ -138,6 +138,9 @@ def make_synthetic_market(
     communities so FinTTA's control flow can be verified without licensed data.
     """
 
+    if input_dim < 10:
+        raise ValueError("input_dim must be at least 10 for the core synthetic market features")
+
     rng = np.random.default_rng(seed)
     sectors = np.array(["tech", "finance", "energy", "health"])
     industries = np.array(["large", "small"])
