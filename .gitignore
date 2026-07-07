@@ -41,3 +41,7 @@ outputs/**
 
 # Local GitHub SSH deploy key material
 .github_fintat_ed25519*
+
+# Local paper draft and plan (not part of the public artifact)
+paper/
+*.local.md
