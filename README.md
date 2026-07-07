@@ -360,11 +360,36 @@ ece               = 0.12953
 fp_buy_loss       = 0.03680
 ```
 
-So the final research conclusion is:
+So the original conclusion from that run was:
 
 > On this open-data financial tabular benchmark, entropy-style source-free TTA was fragile. The added finance-aware safeguards helped relative to naive TTA in some cases, but did not beat a frozen source model on the main metrics.
 
-That makes the project a negative empirical study and a research-engineering artifact rather than a current conference-paper result.
+### Post-Fix Rerun
+
+A code audit later found and fixed real bugs in the engine and evaluation (issues #1-#9 plus follow-ups): newly spawned regime adapters could initialize with zeroed LayerNorm weights, LayerNorms beyond the first block never adapted, prequential predictions absorbed current-batch prior updates before being emitted, and trading metrics misaligned changing universes. The pipeline was then rebuilt from freshly downloaded open data and rerun into:
+
+```text
+outputs/open_panel_full_postfix/metrics.csv
+```
+
+Key rows:
+
+```text
+no_adaptation                  bal_acc 0.2236  macro_f1 0.2125  nll 1.5750  brier 0.7888  ece 0.0672
+calibration_bias_prequential   bal_acc 0.2232  macro_f1 0.2088  nll 1.5551  brier 0.7805  ece 0.0076
+fintta_prequential             bal_acc 0.2001  macro_f1 0.0912  nll 2.6376  brier 1.1686  ece 0.5330
+```
+
+Two things changed after the fixes:
+
+- Full FinTTA is much less pathological (NLL 2.64 vs 3.37, ECE 0.53 vs 0.59) but still loses to no-adaptation on classification. The core negative result stands.
+- The calibration-only prequential variant now beats no-adaptation on NLL, Brier, and especially ECE (0.0076 vs 0.0672) at essentially equal accuracy. Source-free test-time calibration works on this benchmark even though source-free accuracy adaptation does not.
+
+So the refined conclusion is:
+
+> Entropy-style source-free TTA remains fragile on financial tabular data, but restricting online updates to calibration degrees of freedom (logit bias and temperature) gives a consistent calibration improvement over a frozen source model. Adapt the confidence, not the decision function.
+
+Trading metrics are not comparable between the two tables because the turnover computation was fixed and the data was re-downloaded; only within-run comparisons are meaningful.
 
 ## Why I Still Think This Was Worth Doing
 
