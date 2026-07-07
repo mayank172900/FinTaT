@@ -158,11 +158,12 @@ class RegimeAdapterBank:
                     p.mul_(scale)
 
     def _blend(self, weights: dict[int, float]) -> dict[str, torch.Tensor]:
+        available = {regime: weight for regime, weight in weights.items() if regime in self.adapters and weight > 0}
+        if not available:
+            return self.source_state
         base = {k: torch.zeros_like(v) for k, v in self.source_state.items()}
-        total = max(sum(weights.values()), 1e-6)
-        for regime, weight in weights.items():
-            if regime not in self.adapters:
-                continue
+        total = max(sum(available.values()), 1e-6)
+        for regime, weight in available.items():
             for k in base:
                 base[k] += self.adapters[regime][k] * (weight / total)
         return base
