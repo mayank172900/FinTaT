@@ -23,11 +23,19 @@ SRC = ROOT / "src"
 if str(SRC) not in sys.path:
     sys.path.insert(0, str(SRC))
 
+from fintta.baselines import (
+    ACIWrapper,
+    AdaptableStyleEngine,
+    EATAStyleEngine,
+    LAMEEngine,
+    OnlineTempEngine,
+    TentFullEngine,
+)
 from fintta.config import FinTTAConfig
 from fintta.data import PanelDataset, PanelSpec, source_training_tensors
 from fintta.engine import FinTTAEngine
-from fintta.experiment import run_no_adaptation, train_source_model
-from fintta.metrics import classification_metrics, trading_metrics
+from fintta.experiment import train_source_model
+from fintta.metrics import classification_metrics, daily_long_short_return, trading_metrics
 from fintta.model import AdaptableMLP
 
 DEFAULT_VARIANTS = [
@@ -43,6 +51,17 @@ DEFAULT_VARIANTS = [
     "fintta_no_teacher",
     "tent_lite",
 ]
+
+BASELINE_VARIANTS = [
+    "tent_full",
+    "eata_style",
+    "lame",
+    "adaptable_style",
+    "online_temp",
+    "aci",
+]
+
+ALL_VARIANTS = DEFAULT_VARIANTS + BASELINE_VARIANTS
 
 
 def main() -> None:
@@ -75,6 +94,7 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     (output_dir / "diagnostics").mkdir(exist_ok=True)
     (output_dir / "checkpoints").mkdir(exist_ok=True)
+    (output_dir / "daily").mkdir(exist_ok=True)
 
     panel_path = Path(config["data"]["panel_path"])
     feature_cols = resolve_feature_columns(panel_path, config)
@@ -134,18 +154,31 @@ def main() -> None:
     checkpoint_path = output_dir / "checkpoints" / "source_mlp_open.pt"
     torch.save({"model": model.state_dict(), "feature_columns": feature_cols, "args": vars(args)}, checkpoint_path)
 
-    requested = DEFAULT_VARIANTS if args.variants == "all" else [v.strip() for v in args.variants.split(",") if v.strip()]
+    requested = ALL_VARIANTS if args.variants == "all" else [v.strip() for v in args.variants.split(",") if v.strip()]
+    source_prior = torch.bincount(y_train, minlength=model.head.out_features).float()
+    source_prior = (source_prior / source_prior.sum().clamp_min(1e-12)).clamp_min(1e-6)
+    test_dates = list(pd.Index(test_df["date"]).drop_duplicates())
     rows: list[dict[str, float | str]] = []
     for variant in requested:
         print(f"running variant={variant}")
-        if variant == "no_adaptation":
-            metrics = run_no_adaptation(model.clone(), test_batches, 5)
-            diagnostics = []
-        else:
-            cfg = variant_config(variant, args.seed)
-            metrics, diagnostics = run_engine_variant(model.clone(), source_batches, test_batches, cfg, variant=variant)
+        cfg = None if variant == "no_adaptation" else variant_config(variant, args.seed) if variant in DEFAULT_VARIANTS else None
+        result = evaluate_variant(
+            variant=variant,
+            model=model.clone(),
+            source_batches=source_batches,
+            test_batches=test_batches,
+            test_dates=test_dates,
+            source_prior=source_prior,
+            config=cfg,
+            device=args.device,
+        )
+        metrics = result["metrics"]
+        diagnostics = result["diagnostics"]
         row = {"variant": variant, **metrics}
         rows.append(row)
+        pd.DataFrame(result["daily"]).to_csv(output_dir / "daily" / f"{variant}.csv", index=False)
+        if result["coverage"]:
+            pd.DataFrame(result["coverage"]).to_csv(output_dir / "aci_coverage.csv", index=False)
         with (output_dir / "diagnostics" / f"{variant}.json").open("w", encoding="utf-8") as f:
             json.dump({"variant": variant, "metrics": metrics, "diagnostics": diagnostics[:2000]}, f, indent=2, sort_keys=True)
         pd.DataFrame(rows).to_csv(output_dir / "metrics.csv", index=False)
@@ -317,6 +350,296 @@ def variant_config(variant: str, seed: int) -> FinTTAConfig:
     else:
         raise ValueError(f"unknown variant: {variant}")
     return cfg
+
+
+class _FrozenModelRunner:
+    def __init__(self, model: AdaptableMLP, device: str | torch.device) -> None:
+        self.device = torch.device(device)
+        self.model = model.to(self.device)
+        self.model.eval()
+        self.last_output: torch.Tensor | None = None
+
+    def step(self, batch: Any) -> torch.Tensor:
+        batch = batch.to(self.device)
+        with torch.no_grad():
+            probs = torch.softmax(self.model(batch.x), dim=-1)
+        self.last_output = probs.detach()
+        return probs.cpu()
+
+    def observe(self, labels: torch.Tensor) -> dict[str, float] | None:
+        return None
+
+
+class _FinTTAEngineRunner:
+    def __init__(self, engine: FinTTAEngine) -> None:
+        self.engine = engine
+        self.last_output = None
+
+    def step(self, batch: Any) -> torch.Tensor:
+        self.last_output = self.engine.step(batch, adapt=True)
+        return self.last_output.probabilities
+
+    def observe(self, labels: torch.Tensor) -> dict[str, float] | None:
+        return None
+
+
+def build_variant_runner(
+    variant: str,
+    model: AdaptableMLP,
+    *,
+    source_batches,
+    source_prior: torch.Tensor,
+    config: FinTTAConfig | None,
+    device: str | torch.device,
+):
+    if variant == "no_adaptation":
+        return _FrozenModelRunner(model, device)
+    if variant == "fintta_prequential":
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.same_batch_adaptation = False
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        return _FinTTAEngineRunner(engine)
+    if variant == "fintta_same_batch":
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.same_batch_adaptation = True
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        return _FinTTAEngineRunner(engine)
+    if variant in {"conservative_bias_prequential", "conservative_bias_same_batch"}:
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.same_batch_adaptation = variant.endswith("_same_batch")
+        config.lr = 3e-5
+        config.grad_clip = 0.5
+        config.confidence_floor = 0.65
+        config.tau_confidence = 0.04
+        config.min_effective_assets = 80.0
+        config.beta_pi = 0.10
+        config.alpha_prior = 0.05
+        config.alpha_teacher = 0.05
+        config.alpha_graph = 0.0
+        config.alpha_anchor = 0.01
+        config.lambda_min = 0.80
+        config.lambda_max = 1.25
+        config.rho_lambda = 0.5
+        config.teacher_ema = 0.995
+        config.stochastic_restore_p = 0.0
+        config.health_max = 2.0
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        restrict_engine_to_bias_temperature(engine)
+        return _FinTTAEngineRunner(engine)
+    if variant == "calibration_bias_prequential":
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.same_batch_adaptation = False
+        config.lr = 1e-5
+        config.grad_clip = 0.25
+        config.confidence_floor = 0.45
+        config.tau_confidence = 0.08
+        config.min_effective_assets = 20.0
+        config.beta_pi = 0.0
+        config.alpha_prior = 0.0
+        config.alpha_graph = 0.0
+        config.alpha_teacher = 0.10
+        config.alpha_anchor = 0.05
+        config.lambda_min = 0.90
+        config.lambda_max = 1.10
+        config.rho_lambda = 0.25
+        config.teacher_ema = 0.995
+        config.stochastic_restore_p = 0.0
+        config.health_max = 8.0
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        restrict_engine_to_bias_temperature(engine)
+        return _FinTTAEngineRunner(engine)
+    if variant == "fintta_no_risk":
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.rho_lambda = 0.0
+        config.risk_temperature = 1e6
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        return _FinTTAEngineRunner(engine)
+    if variant == "fintta_no_graph":
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.alpha_graph = 0.0
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        return _FinTTAEngineRunner(engine)
+    if variant == "fintta_no_prior":
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.alpha_prior = 0.0
+        config.beta_pi = 0.0
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        return _FinTTAEngineRunner(engine)
+    if variant == "fintta_no_teacher":
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.alpha_teacher = 0.0
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        return _FinTTAEngineRunner(engine)
+    if variant == "tent_lite":
+        config = config or FinTTAConfig(seed=7, num_classes=model.head.out_features)
+        config.same_batch_adaptation = True
+        config.rho_lambda = 0.0
+        config.risk_temperature = 1e6
+        config.alpha_graph = 0.0
+        config.alpha_prior = 0.0
+        config.alpha_teacher = 0.0
+        config.beta_pi = 0.0
+        config.confidence_floor = 0.0
+        engine = FinTTAEngine(model, config=config, device=device)
+        engine.warm_start_market_states(source_batches)
+        return _FinTTAEngineRunner(engine)
+    if variant == "tent_full":
+        return TentFullEngine(model, device=device)
+    if variant == "eata_style":
+        return EATAStyleEngine(model, device=device)
+    if variant == "lame":
+        return LAMEEngine(model, device=device)
+    if variant == "adaptable_style":
+        return AdaptableStyleEngine(model, source_prior=source_prior, device=device)
+    if variant == "online_temp":
+        return OnlineTempEngine(model, device=device)
+    if variant == "aci":
+        return ACIWrapper(model, device=device)
+    raise ValueError(f"unknown variant: {variant}")
+
+
+def evaluate_variant(
+    *,
+    variant: str,
+    model: AdaptableMLP,
+    source_batches,
+    test_batches,
+    test_dates,
+    source_prior: torch.Tensor,
+    config: FinTTAConfig | None,
+    device: str | torch.device,
+) -> dict[str, Any]:
+    runner = build_variant_runner(
+        variant,
+        model,
+        source_batches=source_batches,
+        source_prior=source_prior,
+        config=config,
+        device=device,
+    )
+    exposure = torch.tensor(FinTTAConfig(num_classes=model.head.out_features).ordinal_exposure, dtype=torch.float32)
+    probs: list[torch.Tensor] = []
+    labels: list[torch.Tensor] = []
+    scores: list[torch.Tensor] = []
+    fwd: list[np.ndarray] = []
+    asset_ids: list[list[str]] = []
+    diagnostics: list[dict[str, float]] = []
+    daily_rows: list[dict[str, float | str]] = []
+    coverage_rows: list[dict[str, float | str]] = []
+    prev_weights: dict[str, float] | np.ndarray | None = None
+    pending_labels: torch.Tensor | None = None
+    pending_date: pd.Timestamp | None = None
+    for t, (date, batch) in enumerate(zip(test_dates, test_batches, strict=True)):
+        if pending_labels is not None:
+            update = runner.observe(pending_labels)
+            if variant == "aci" and update is not None:
+                coverage_rows.append({"date": pending_date.isoformat(), "n_assets": int(pending_labels.shape[0]), **update})
+        probs_t = runner.step(batch).detach().cpu()
+        labels_t = batch.labels.detach().cpu() if batch.labels is not None else torch.empty(0, dtype=torch.long)
+        score_t = probs_t @ exposure
+        probs.append(probs_t)
+        labels.append(labels_t)
+        scores.append(score_t)
+        fwd.append(batch.forward_returns)
+        asset_ids.append(batch.asset_ids)
+        daily_return, prev_weights = daily_long_short_return(score_t, batch.forward_returns, prev_weights, batch.asset_ids)
+        if variant == "aci":
+            daily_row: dict[str, float | str] = {
+                "date": date.isoformat(),
+                "n_assets": int(batch.n_assets),
+                "nll": float("nan"),
+                "brier": float("nan"),
+                "top1_accuracy": float("nan"),
+                "mean_confidence": float("nan"),
+                "long_short_return": daily_return,
+            }
+        else:
+            daily_row = {
+                "date": date.isoformat(),
+                "n_assets": int(batch.n_assets),
+                **_daily_classification_stats(probs_t, labels_t, model.head.out_features),
+                "long_short_return": daily_return,
+            }
+        daily_rows.append(daily_row)
+        diagnostics.append(_variant_diagnostics(variant, runner, t))
+        pending_labels = labels_t
+        pending_date = date
+    if pending_labels is not None:
+        update = runner.observe(pending_labels)
+        if variant == "aci" and update is not None:
+            coverage_rows.append({"date": pending_date.isoformat(), "n_assets": int(pending_labels.shape[0]), **update})
+
+    metrics = _final_metrics(variant, probs, labels, scores, fwd, asset_ids, model.head.out_features, coverage_rows)
+    return {"metrics": metrics, "daily": daily_rows, "coverage": coverage_rows, "diagnostics": diagnostics}
+
+
+def _daily_classification_stats(probabilities: torch.Tensor, labels: torch.Tensor, num_classes: int) -> dict[str, float]:
+    p = probabilities.detach().cpu().numpy()
+    y = labels.detach().cpu().numpy()
+    if p.size == 0 or y.size == 0:
+        return {"nll": float("nan"), "brier": float("nan"), "top1_accuracy": float("nan"), "mean_confidence": float("nan")}
+    pred = p.argmax(axis=1)
+    onehot = np.eye(num_classes)[y]
+    return {
+        "nll": float(-np.log(p[np.arange(y.size), y] + 1e-12).mean()),
+        "brier": float(np.mean(np.sum((p - onehot) ** 2, axis=1))),
+        "top1_accuracy": float((pred == y).mean()),
+        "mean_confidence": float(p.max(axis=1).mean()),
+    }
+
+
+def _final_metrics(
+    variant: str,
+    probs: list[torch.Tensor],
+    labels: list[torch.Tensor],
+    scores: list[torch.Tensor],
+    forward_returns: list[np.ndarray],
+    asset_ids: list[list[str]],
+    num_classes: int,
+    coverage_rows: list[dict[str, float | str]],
+) -> dict[str, float]:
+    if variant == "aci":
+        metrics = {key: float("nan") for key in ["accuracy", "balanced_accuracy", "macro_f1", "nll", "brier", "ece"]}
+    else:
+        metrics = classification_metrics(probs, labels, num_classes)
+    metrics.update({f"trade_{k}": v for k, v in trading_metrics(scores, forward_returns, labels, asset_ids=asset_ids).items()})
+    if coverage_rows:
+        coverage = np.array([float(row["coverage"]) for row in coverage_rows], dtype=np.float64)
+        set_size = np.array([float(row["mean_set_size"]) for row in coverage_rows], dtype=np.float64)
+        metrics["aci_coverage"] = float(np.mean(coverage))
+        metrics["aci_set_size"] = float(np.mean(set_size))
+    else:
+        metrics["aci_coverage"] = float("nan")
+        metrics["aci_set_size"] = float("nan")
+    return metrics
+
+
+def _variant_diagnostics(variant: str, runner: Any, t: int) -> dict[str, float]:
+    if isinstance(runner, _FinTTAEngineRunner) and runner.last_output is not None:
+        out = runner.last_output
+        return {
+            "t": float(t),
+            "regime": float(out.regime),
+            "shock": float(out.shock),
+            "adapted": float(out.adapted),
+            "effective_assets": float(out.effective_assets),
+        }
+    if variant == "aci" and getattr(runner, "coverage_history", None):
+        last = runner.coverage_history[-1]
+        return {"t": float(t), "coverage": float(last["coverage"]), "mean_set_size": float(last["mean_set_size"]), "alpha": float(last["alpha"])}
+    if variant == "online_temp":
+        temperature = float(runner.model.log_temperature.exp().detach().cpu())
+        bias_norm = float(runner.model.logit_bias.detach().norm().cpu())
+        return {"t": float(t), "temperature": temperature, "bias_norm": bias_norm}
+    return {"t": float(t)}
 
 
 def resolve_feature_columns(panel_path: Path, config: dict) -> list[str]:
