@@ -1,11 +1,16 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
+import importlib.metadata
 import json
+import platform
 import random
+import subprocess
 import sys
 from dataclasses import asdict
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pandas as pd
@@ -150,6 +155,7 @@ def main() -> None:
     summary = {
         "config": config,
         "args": vars(args),
+        "provenance": build_provenance(args, panel_path),
         "source_rows": len(source_df),
         "test_rows": len(test_df),
         "source_days": len(source_batches),
@@ -353,6 +359,63 @@ def set_seed(seed: int) -> None:
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
+
+
+def build_provenance(args: argparse.Namespace, panel_path: Path) -> dict[str, Any]:
+    return {
+        "git": git_provenance(ROOT),
+        "command_line": sys.argv[:],
+        "python": {
+            "version": platform.python_version(),
+            "executable": sys.executable,
+            "platform": platform.platform(),
+        },
+        "packages": package_versions(["fintta", "numpy", "pandas", "pyarrow", "torch", "scikit-learn"]),
+        "input_panel": {
+            "path": str(panel_path),
+            "sha256": file_sha256(panel_path) if panel_path.exists() else None,
+        },
+        "seeds": {
+            "python_random": args.seed,
+            "numpy": args.seed,
+            "torch": args.seed,
+        },
+    }
+
+
+def git_provenance(root: Path) -> dict[str, Any]:
+    commit = run_git(root, ["rev-parse", "HEAD"])
+    status = run_git(root, ["status", "--porcelain"])
+    return {
+        "commit": commit,
+        "dirty": bool(status),
+    }
+
+
+def run_git(root: Path, args: list[str]) -> str | None:
+    try:
+        result = subprocess.run(["git", *args], cwd=root, check=True, capture_output=True, text=True)
+    except (OSError, subprocess.CalledProcessError):
+        return None
+    return result.stdout.strip()
+
+
+def package_versions(names: list[str]) -> dict[str, str | None]:
+    out = {}
+    for name in names:
+        try:
+            out[name] = importlib.metadata.version(name)
+        except importlib.metadata.PackageNotFoundError:
+            out[name] = None
+    return out
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 if __name__ == "__main__":
