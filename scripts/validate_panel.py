@@ -63,16 +63,24 @@ def validate_panel(panel_path: str | Path, config_path: str | Path | None = None
 
     eval_in_features = sorted(set(feature_columns).intersection(EVALUATION_ONLY_COLUMNS))
     feature_timestamp_violations = _timestamp_violations(panel)
+    macro_vintage_after_date_rows = _date_order_violations(panel, "vintage_date")
+    filing_date_after_date_rows = _date_order_violations(panel, "filing_date")
+    leakage_failed = bool(
+        eval_in_features
+        or feature_timestamp_violations
+        or macro_vintage_after_date_rows
+        or filing_date_after_date_rows
+    )
     report["leakage"] = {
         "adaptation_feature_count": len(feature_columns),
         "evaluation_columns_in_adaptation_features": eval_in_features,
         "timestamp_columns_after_date": feature_timestamp_violations,
-        "macro_vintage_after_date_rows": _date_order_violations(panel, "vintage_date"),
-        "filing_date_after_date_rows": _date_order_violations(panel, "filing_date"),
+        "macro_vintage_after_date_rows": macro_vintage_after_date_rows,
+        "filing_date_after_date_rows": filing_date_after_date_rows,
         "feature_columns_all_prefixed": all(c.startswith("feat_") for c in feature_columns),
-        "result": "pass" if not eval_in_features and not feature_timestamp_violations else "fail",
+        "result": "fail" if leakage_failed else "pass",
     }
-    if eval_in_features or feature_timestamp_violations:
+    if leakage_failed:
         report["errors"].append("leakage failed: evaluation columns or future timestamps found in features")
 
     active = panel.get("is_active", pd.Series(True, index=panel.index)).fillna(True).astype(bool)
