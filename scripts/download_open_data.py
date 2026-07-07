@@ -7,13 +7,11 @@ import time
 import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Iterable
 
 import numpy as np
 import pandas as pd
 import requests
 import yfinance as yf
-
 
 START = "2014-01-01"
 END = "2024-12-31"
@@ -23,6 +21,7 @@ SP500_HISTORY_URL = (
     "https://raw.githubusercontent.com/fja05680/sp500/master/"
     "S%26P%20500%20Historical%20Components%20%26%20Changes%2801-17-2026%29.csv"
 )
+SP500_REPO_CONTENTS_URL = "https://api.github.com/repos/fja05680/sp500/contents"
 SP500_CURRENT_URL = "https://raw.githubusercontent.com/fja05680/sp500/master/sp500.csv"
 SP500_TICKER_DATES_URL = "https://raw.githubusercontent.com/fja05680/sp500/master/sp500_ticker_start_end.csv"
 CBOE_VIX_URL = "https://cdn.cboe.com/api/global/us_indices/daily_prices/VIX_History.csv"
@@ -73,6 +72,11 @@ def main() -> None:
     parser.add_argument("--skip-finra", action="store_true")
     parser.add_argument("--finra-start", default="2018-08-01", help="FINRA consolidated NMS begins in 2018.")
     parser.add_argument("--finra-end", default=END)
+    parser.add_argument(
+        "--sp500-history-url",
+        default=None,
+        help="Override the point-in-time S&P 500 history CSV URL if the upstream filename changes.",
+    )
     args = parser.parse_args()
 
     raw_dir = Path(args.raw_dir)
@@ -85,7 +89,7 @@ def main() -> None:
     session = requests.Session()
     session.headers.update({"User-Agent": USER_AGENT})
 
-    history = download_sp500(session, raw_dir, records)
+    history = download_sp500(session, raw_dir, records, history_url=args.sp500_history_url)
     universe = build_universe(history, raw_dir, normalized_dir, args.start, args.end, records)
     tickers = sorted(universe["ticker"].dropna().unique())
     if args.max_tickers > 0:
@@ -119,17 +123,67 @@ def main() -> None:
     print(json.dumps(manifest, indent=2, sort_keys=True))
 
 
-def download_sp500(session: requests.Session, raw_dir: Path, records: list[SourceRecord]) -> pd.DataFrame:
+def download_sp500(
+    session: requests.Session,
+    raw_dir: Path,
+    records: list[SourceRecord],
+    history_url: str | None = None,
+) -> pd.DataFrame:
     history_path = raw_dir / "sp500_history_fja05680.csv"
     current_path = raw_dir / "sp500_current_wikipedia_fja05680.csv"
     ticker_dates_path = raw_dir / "sp500_ticker_start_end_fja05680.csv"
-    history = fetch_csv(session, SP500_HISTORY_URL, history_path)
+    history_urls = [history_url] if history_url else [SP500_HISTORY_URL, *discover_sp500_history_urls(session)]
+    history = fetch_first_csv(
+        session,
+        [url for url in history_urls if url],
+        history_path,
+        source_name="fja05680/sp500 historical components",
+    )
     current = fetch_csv(session, SP500_CURRENT_URL, current_path)
     ticker_dates = fetch_csv(session, SP500_TICKER_DATES_URL, ticker_dates_path)
     records.append(SourceRecord("sp500_history", "downloaded", str(history_path), len(history), "PIT S&P 500 components from fja05680/sp500."))
     records.append(SourceRecord("sp500_current", "downloaded", str(current_path), len(current), "Current S&P 500 metadata from fja05680/sp500."))
     records.append(SourceRecord("sp500_ticker_start_end", "downloaded", str(ticker_dates_path), len(ticker_dates), "Ticker membership intervals from fja05680/sp500."))
     return history
+
+
+def discover_sp500_history_urls(session: requests.Session) -> list[str]:
+    try:
+        response = session.get(SP500_REPO_CONTENTS_URL, timeout=20)
+        response.raise_for_status()
+        entries = response.json()
+    except Exception:
+        return []
+    urls = []
+    for entry in entries:
+        name = str(entry.get("name", ""))
+        if name.startswith("S&P 500 Historical Components & Changes") and name.endswith(".csv"):
+            download_url = entry.get("download_url")
+            if download_url:
+                urls.append(str(download_url))
+    return sorted(set(urls), reverse=True)
+
+
+def fetch_first_csv(
+    session: requests.Session,
+    urls: list[str],
+    path: Path,
+    *,
+    source_name: str,
+    timeout: int = 30,
+) -> pd.DataFrame:
+    errors = []
+    for url in dict.fromkeys(urls):
+        try:
+            return fetch_csv(session, url, path, timeout=timeout)
+        except Exception as exc:
+            errors.append(f"{url}: {exc}")
+    detail = "\n".join(f"  - {error}" for error in errors) or "  - no candidate URLs were available"
+    raise RuntimeError(
+        f"Unable to download {source_name}.\n"
+        f"Tried:\n{detail}\n"
+        "Pass --sp500-history-url with a working CSV URL, or update SP500_HISTORY_URL in scripts/download_open_data.py."
+    )
 
 
 def build_universe(
