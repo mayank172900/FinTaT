@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 import warnings
+from dataclasses import dataclass
 
 import numpy as np
 import torch
@@ -101,3 +101,34 @@ class RiskModel:
         costs = costs.to(device)
         raw = (prior + self.config.epsilon_pi) * torch.exp(-costs / max(self.config.risk_temperature, 1e-6))
         return raw / raw.sum().clamp_min(self.config.epsilon)
+
+    def to_state(self) -> dict:
+        return {
+            "sigma_ref": self.sigma_ref,
+            "cvar_ref": self.cvar_ref,
+            "by_regime": {
+                str(regime): {
+                    "sigma": estimate.sigma,
+                    "rho": estimate.rho,
+                    "cvar_down": estimate.cvar_down,
+                    "liquidity_stress": estimate.liquidity_stress,
+                }
+                for regime, estimate in self.by_regime.items()
+            },
+        }
+
+    @classmethod
+    def from_state(cls, config: FinTTAConfig, state: dict) -> RiskModel:
+        model = cls(config)
+        model.sigma_ref = float(state.get("sigma_ref", 1.0))
+        model.cvar_ref = float(state.get("cvar_ref", 1.0))
+        model.by_regime = {
+            int(regime): RiskEstimate(
+                sigma=float(values.get("sigma", 1.0)),
+                rho=float(values.get("rho", 0.0)),
+                cvar_down=float(values.get("cvar_down", 1.0)),
+                liquidity_stress=float(values.get("liquidity_stress", 0.0)),
+            )
+            for regime, values in state.get("by_regime", {}).items()
+        }
+        return model

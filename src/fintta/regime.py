@@ -116,6 +116,42 @@ class RegimeTracker:
     def regime_ids(self) -> list[int]:
         return list(self.regimes)
 
+    def to_state(self) -> dict:
+        return {
+            "psi_dim": self.psi_dim,
+            "posterior": self.posterior.tolist(),
+            "active": self.active,
+            "next_id": self.next_id,
+            "regimes": {
+                str(rid): {
+                    "mu": regime.mu.tolist(),
+                    "cov": regime.cov.tolist(),
+                    "count": regime.count,
+                    "alpha": regime.alpha.tolist(),
+                }
+                for rid, regime in self.regimes.items()
+            },
+        }
+
+    @classmethod
+    def from_state(cls, config: FinTTAConfig, state: dict) -> RegimeTracker:
+        tracker = cls(config, psi_dim=state.get("psi_dim"))
+        tracker.regimes = {}
+        for rid_text, regime_state in state.get("regimes", {}).items():
+            tracker.regimes[int(rid_text)] = _Regime(
+                mu=np.asarray(regime_state["mu"], dtype=np.float64),
+                cov=np.asarray(regime_state["cov"], dtype=np.float64),
+                count=float(regime_state["count"]),
+                alpha=np.asarray(regime_state["alpha"], dtype=np.float64),
+            )
+        tracker.posterior = np.asarray(state.get("posterior", [1.0]), dtype=np.float64)
+        tracker.active = int(state.get("active", 0))
+        tracker.next_id = int(state.get("next_id", len(tracker.regimes)))
+        if tracker.posterior.size != len(tracker.regimes):
+            tracker.posterior = np.ones(max(len(tracker.regimes), 1), dtype=np.float64)
+            tracker.posterior = tracker.posterior / tracker.posterior.sum()
+        return tracker
+
     def similarity_weights(self, psi: np.ndarray, temperature: float = 4.0) -> dict[int, float]:
         if not self.regimes:
             return {}
