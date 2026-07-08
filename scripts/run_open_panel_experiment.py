@@ -36,7 +36,7 @@ from fintta.data import PanelDataset, PanelSpec, source_training_tensors
 from fintta.engine import FinTTAEngine
 from fintta.experiment import train_source_model
 from fintta.metrics import classification_metrics, daily_long_short_return, trading_metrics
-from fintta.model import AdaptableMLP
+from fintta.model import AdaptableMLP, FTTransformerLite
 
 DEFAULT_VARIANTS = [
     "no_adaptation",
@@ -70,6 +70,7 @@ def main() -> None:
     parser.add_argument("--output-dir", default="outputs/open_panel")
     parser.add_argument("--variants", default=",".join(DEFAULT_VARIANTS), help="Comma-separated variants or 'all'.")
     parser.add_argument("--epochs", type=int, default=8)
+    parser.add_argument("--model-arch", choices=["mlp", "ft_lite"], default="mlp")
     parser.add_argument("--hidden-dim", type=int, default=96)
     parser.add_argument("--depth", type=int, default=2)
     parser.add_argument("--batch-size", type=int, default=2048)
@@ -143,16 +144,10 @@ def main() -> None:
     print(f"source rows={len(source_df):,} days={len(source_batches):,}; test rows={len(test_df):,} days={len(test_batches):,}")
 
     x_train, y_train = source_training_tensors(source_batches)
-    model = AdaptableMLP(
-        input_dim=len(feature_cols),
-        num_classes=5,
-        hidden_dim=args.hidden_dim,
-        depth=args.depth,
-        adapter_rank=8,
-    )
+    model = build_source_model(args, input_dim=len(feature_cols), num_classes=5)
     model = train_source_model_batched(model, x_train, y_train, epochs=args.epochs, lr=args.lr, batch_size=args.batch_size)
-    checkpoint_path = output_dir / "checkpoints" / "source_mlp_open.pt"
-    torch.save({"model": model.state_dict(), "feature_columns": feature_cols, "args": vars(args)}, checkpoint_path)
+    checkpoint_path = output_dir / "checkpoints" / f"source_{args.model_arch}_open.pt"
+    torch.save(source_checkpoint_payload(model, feature_cols, args), checkpoint_path)
 
     requested = ALL_VARIANTS if args.variants == "all" else [v.strip() for v in args.variants.split(",") if v.strip()]
     source_prior = torch.bincount(y_train, minlength=model.head.out_features).float()
@@ -188,6 +183,7 @@ def main() -> None:
         "config": config,
         "args": vars(args),
         "provenance": build_provenance(args, panel_path),
+        "model_arch": args.model_arch,
         "source_rows": len(source_df),
         "test_rows": len(test_df),
         "source_days": len(source_batches),
@@ -202,15 +198,47 @@ def main() -> None:
     print(f"wrote {output_dir / 'metrics.csv'}")
 
 
+def build_source_model(
+    args: argparse.Namespace,
+    *,
+    input_dim: int,
+    num_classes: int,
+) -> AdaptableMLP | FTTransformerLite:
+    if args.model_arch == "mlp":
+        return AdaptableMLP(
+            input_dim=input_dim,
+            num_classes=num_classes,
+            hidden_dim=args.hidden_dim,
+            depth=args.depth,
+            adapter_rank=8,
+        )
+    if args.model_arch == "ft_lite":
+        return FTTransformerLite(input_dim=input_dim, num_classes=num_classes)
+    raise ValueError(f"unknown model architecture: {args.model_arch}")
+
+
+def source_checkpoint_payload(
+    model: AdaptableMLP | FTTransformerLite,
+    feature_cols: list[str],
+    args: argparse.Namespace,
+) -> dict[str, Any]:
+    return {
+        "model": model.state_dict(),
+        "feature_columns": feature_cols,
+        "args": vars(args),
+        "model_arch": args.model_arch,
+    }
+
+
 def train_source_model_batched(
-    model: AdaptableMLP,
+    model: AdaptableMLP | FTTransformerLite,
     x: torch.Tensor,
     y: torch.Tensor,
     *,
     epochs: int,
     lr: float,
     batch_size: int,
-) -> AdaptableMLP:
+) -> AdaptableMLP | FTTransformerLite:
     if batch_size <= 0:
         return train_source_model(model, x, y, epochs=epochs, lr=lr)
     model.train()
@@ -639,6 +667,8 @@ def _variant_diagnostics(variant: str, runner: Any, t: int) -> dict[str, float]:
         temperature = float(runner.model.log_temperature.exp().detach().cpu())
         bias_norm = float(runner.model.logit_bias.detach().norm().cpu())
         return {"t": float(t), "temperature": temperature, "bias_norm": bias_norm}
+    if variant == "eata_style":
+        return {"t": float(t), "selected_count": float(getattr(runner, "last_selected_count", 0))}
     return {"t": float(t)}
 
 
@@ -687,6 +717,7 @@ def build_provenance(args: argparse.Namespace, panel_path: Path) -> dict[str, An
     return {
         "git": git_provenance(ROOT),
         "command_line": sys.argv[:],
+        "model_arch": getattr(args, "model_arch", "mlp"),
         "python": {
             "version": platform.python_version(),
             "executable": sys.executable,

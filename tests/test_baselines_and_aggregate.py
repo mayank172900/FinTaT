@@ -154,6 +154,22 @@ def test_tent_full_updates_only_layernorm_affine_parameters():
     assert changed, "expected at least one LayerNorm affine parameter to change"
 
 
+def test_eata_style_diagnostics_expose_selected_count():
+    from run_open_panel_experiment import _variant_diagnostics
+
+    from fintta.baselines import EATAStyleEngine
+
+    market = make_synthetic_market(n_assets=8, source_days=3, test_days=1, lookback=4, input_dim=10, seed=15)
+    model = AdaptableMLP(market.input_dim, market.num_classes, hidden_dim=12, depth=1)
+    engine = EATAStyleEngine(model, entropy_ratio=0.0)
+
+    engine.step(market.test_batches[0])
+    diagnostics = _variant_diagnostics("eata_style", engine, t=0)
+
+    assert engine.last_selected_count == 0
+    assert diagnostics["selected_count"] == 0.0
+
+
 @pytest.mark.parametrize("engine_name", ["lame", "adaptable_style"])
 def test_output_level_baselines_leave_parameters_untouched_and_return_simplex_probabilities(engine_name: str):
     from fintta.baselines import AdaptableStyleEngine, LAMEEngine

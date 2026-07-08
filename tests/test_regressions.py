@@ -1,3 +1,4 @@
+import argparse
 import sys
 from pathlib import Path
 
@@ -21,7 +22,7 @@ from fintta.engine import FinTTAEngine
 from fintta.graph import build_signed_graph
 from fintta.losses import risk_weighted_entropy
 from fintta.metrics import expected_calibration_error, trading_metrics
-from fintta.model import AdaptableMLP, RegimeAdapterBank
+from fintta.model import AdaptableMLP, FTTransformerLite, RegimeAdapterBank
 from fintta.types import AssetBatch
 
 
@@ -272,7 +273,7 @@ def test_open_panel_provenance_builder_records_git_command_versions_and_panel_ha
 
     panel = tmp_path / "panel.parquet"
     pd.DataFrame({"x": [1]}).to_parquet(panel, index=False)
-    args = type("Args", (), {"seed": 123})()
+    args = type("Args", (), {"seed": 123, "model_arch": "mlp"})()
 
     provenance = build_provenance(args, panel)
 
@@ -281,6 +282,23 @@ def test_open_panel_provenance_builder_records_git_command_versions_and_panel_ha
     assert "numpy" in provenance["packages"]
     assert provenance["input_panel"]["sha256"]
     assert provenance["seeds"]["numpy"] == 123
+    assert provenance["model_arch"] == "mlp"
+
+
+def test_open_panel_runner_selects_source_model_architecture():
+    from run_open_panel_experiment import build_source_model, source_checkpoint_payload
+
+    mlp_args = argparse.Namespace(model_arch="mlp", hidden_dim=12, depth=1)
+    ft_args = argparse.Namespace(model_arch="ft_lite", hidden_dim=12, depth=1)
+
+    mlp = build_source_model(mlp_args, input_dim=10, num_classes=5)
+    ft_lite = build_source_model(ft_args, input_dim=10, num_classes=5)
+    payload = source_checkpoint_payload(ft_lite, ["feat_a"], ft_args)
+
+    assert isinstance(mlp, AdaptableMLP)
+    assert isinstance(ft_lite, FTTransformerLite)
+    assert payload["model_arch"] == "ft_lite"
+    assert payload["args"]["model_arch"] == "ft_lite"
 
 
 def test_tent_lite_variant_uses_same_batch_adaptation():

@@ -90,8 +90,135 @@ class AdaptableMLP(nn.Module):
         return copy.deepcopy(self)
 
 
+class _NumericalFeatureTokenizer(nn.Module):
+    def __init__(self, input_dim: int, d_model: int) -> None:
+        super().__init__()
+        self.scale = nn.Parameter(torch.empty(input_dim, d_model))
+        self.bias = nn.Parameter(torch.zeros(input_dim, d_model))
+        nn.init.normal_(self.scale, std=d_model**-0.5)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        return x.unsqueeze(-1) * self.scale.unsqueeze(0) + self.bias.unsqueeze(0)
+
+
+class _FTTransformerLiteBackbone(nn.Module):
+    def __init__(
+        self,
+        input_dim: int,
+        d_model: int,
+        n_heads: int,
+        depth: int,
+        dropout: float,
+        adapter_rank: int,
+    ) -> None:
+        super().__init__()
+        self.tokenizer = _NumericalFeatureTokenizer(input_dim, d_model)
+        self.cls_token = nn.Parameter(torch.zeros(1, 1, d_model))
+        self.layers = nn.ModuleList(
+            [
+                nn.TransformerEncoderLayer(
+                    d_model=d_model,
+                    nhead=n_heads,
+                    dim_feedforward=4 * d_model,
+                    dropout=dropout,
+                    activation="gelu",
+                    batch_first=True,
+                    norm_first=True,
+                )
+                for _ in range(depth)
+            ]
+        )
+        self.adapters = nn.ModuleList([AdapterBlock(d_model, rank=adapter_rank) for _ in range(max(depth - 1, 0))])
+        nn.init.normal_(self.cls_token, std=d_model**-0.5)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        tokens = self.tokenizer(x)
+        cls = self.cls_token.expand(x.shape[0], -1, -1)
+        h = torch.cat([cls, tokens], dim=1)
+        for idx, layer in enumerate(self.layers):
+            h = layer(h)
+            if idx < len(self.adapters):
+                h = self.adapters[idx](h)
+        return h[:, 0]
+
+
+class FTTransformerLite(nn.Module):
+    """Lightweight FT-Transformer source model after Gorishniy et al. (2021, FT-Transformer).
+
+    Numerical inputs are tokenized as one learned scale+bias projection per feature, prepended with a CLS token,
+    and passed through pre-norm Transformer encoder layers. The adaptation API intentionally mirrors
+    `AdaptableMLP`. `AdapterBlock` is applied tokenwise between encoder layers because it operates on the final
+    `d_model` dimension, which lets the existing adapter-state and freezing logic remain shared in spirit.
+    """
+
+    def __init__(
+        self,
+        input_dim: int,
+        num_classes: int = 5,
+        d_model: int = 64,
+        n_heads: int = 4,
+        depth: int = 2,
+        dropout: float = 0.1,
+        adapter_rank: int = 8,
+    ) -> None:
+        super().__init__()
+        if depth < 1:
+            raise ValueError("depth must be at least 1")
+        if d_model % n_heads != 0:
+            raise ValueError("d_model must be divisible by n_heads")
+        self.input_shift = nn.Parameter(torch.zeros(input_dim))
+        self.input_scale_log = nn.Parameter(torch.zeros(input_dim))
+        self.backbone = _FTTransformerLiteBackbone(input_dim, d_model, n_heads, depth, dropout, adapter_rank)
+        self.head = nn.Linear(d_model, num_classes)
+        self.logit_bias = nn.Parameter(torch.zeros(num_classes))
+        self.log_temperature = nn.Parameter(torch.zeros(()))
+        self._adaptation_parameter_names = self._collect_adaptation_parameter_names()
+
+    def forward(self, x: torch.Tensor, return_features: bool = False) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
+        x = (x + self.input_shift) * self.input_scale_log.exp().clamp(0.2, 5.0)
+        h = self.backbone(x)
+        logits = self.head(h)
+        logits = (logits + self.logit_bias) / self.log_temperature.exp().clamp(0.25, 4.0)
+        if return_features:
+            return logits, h
+        return logits
+
+    def freeze_source_weights(self) -> None:
+        for name, param in self.named_parameters():
+            param.requires_grad = self.is_adaptation_parameter(name)
+
+    def is_adaptation_parameter(self, name: str) -> bool:
+        return name in self._adaptation_parameter_names
+
+    def _collect_adaptation_parameter_names(self) -> set[str]:
+        names = {"input_shift", "input_scale_log", "logit_bias", "log_temperature", "head.bias"}
+        for module_name, module in self.named_modules():
+            if isinstance(module, nn.LayerNorm):
+                names.add(f"{module_name}.weight")
+                names.add(f"{module_name}.bias")
+            elif isinstance(module, AdapterBlock):
+                names.add(f"{module_name}.down.weight")
+                names.add(f"{module_name}.up.weight")
+        return names
+
+    def adaptation_state(self) -> dict[str, torch.Tensor]:
+        return {n: p.detach().clone() for n, p in self.named_parameters() if self.is_adaptation_parameter(n)}
+
+    def load_adaptation_state(self, state: dict[str, torch.Tensor]) -> None:
+        params = dict(self.named_parameters())
+        for name, value in state.items():
+            if name in params:
+                params[name].data.copy_(value.to(params[name].device))
+
+    def zero_adaptation_state(self) -> dict[str, torch.Tensor]:
+        return {name: torch.zeros_like(value) for name, value in self.adaptation_state().items()}
+
+    def clone(self) -> FTTransformerLite:
+        return copy.deepcopy(self)
+
+
 class RegimeAdapterBank:
-    def __init__(self, model: AdaptableMLP, max_regimes: int, teacher_ema: float = 0.98) -> None:
+    def __init__(self, model: AdaptableMLP | FTTransformerLite, max_regimes: int, teacher_ema: float = 0.98) -> None:
         self.model = model
         self.max_regimes = max_regimes
         self.teacher_ema = teacher_ema

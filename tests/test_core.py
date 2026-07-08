@@ -6,7 +6,7 @@ from fintta.data import make_synthetic_market, source_training_tensors
 from fintta.engine import FinTTAEngine
 from fintta.experiment import train_source_model
 from fintta.graph import build_signed_graph, graph_reliability
-from fintta.model import AdaptableMLP
+from fintta.model import AdaptableMLP, FTTransformerLite
 from fintta.regime import RegimeTracker
 from fintta.risk import RiskEstimate, RiskModel
 
@@ -64,3 +64,51 @@ def test_online_engine_smoke_prequential(tmp_path):
     restored.load(path)
     out = restored.step(market.test_batches[-1], adapt=False)
     assert out.probabilities.shape == (24, 5)
+
+
+def test_ft_transformer_lite_forward_shape_and_adaptation_surface():
+    market = make_synthetic_market(n_assets=8, source_days=3, test_days=1, lookback=4, input_dim=10, seed=31)
+    model = FTTransformerLite(market.input_dim, market.num_classes, d_model=16, n_heads=4, depth=2, dropout=0.0)
+    batch = market.test_batches[0]
+
+    logits, features = model(batch.x, return_features=True)
+
+    assert logits.shape == (batch.n_assets, market.num_classes)
+    assert features.shape == (batch.n_assets, 16)
+    assert torch.isfinite(logits).all()
+    assert torch.isfinite(features).all()
+    assert model.head.out_features == market.num_classes
+
+    layernorm_names = [
+        f"{module_name}.{suffix}"
+        for module_name, module in model.named_modules()
+        if isinstance(module, torch.nn.LayerNorm)
+        for suffix in ("weight", "bias")
+    ]
+    assert layernorm_names
+    assert all(model.is_adaptation_parameter(name) for name in layernorm_names)
+    for name in ("input_shift", "input_scale_log", "logit_bias", "log_temperature", "head.bias"):
+        assert model.is_adaptation_parameter(name)
+
+
+def test_ft_transformer_lite_runs_core_online_engines():
+    from fintta.baselines import OnlineTempEngine, TentFullEngine
+
+    market = make_synthetic_market(n_assets=8, source_days=3, test_days=2, lookback=4, input_dim=10, seed=37)
+    model = FTTransformerLite(market.input_dim, market.num_classes, d_model=16, n_heads=4, depth=2, dropout=0.0)
+    cfg = FinTTAConfig(num_classes=market.num_classes, min_effective_assets=1.0, same_batch_adaptation=True)
+    batch = market.test_batches[0]
+
+    fintta_out = FinTTAEngine(model.clone(), cfg).step(batch, adapt=True)
+    tent_probs = TentFullEngine(model.clone(), lr=1e-3).step(batch)
+    online = OnlineTempEngine(model.clone(), lr=1e-3)
+    online_probs = online.step(batch)
+    update = online.observe(batch.labels)
+
+    assert fintta_out.probabilities.shape == (batch.n_assets, market.num_classes)
+    assert tent_probs.shape == (batch.n_assets, market.num_classes)
+    assert online_probs.shape == (batch.n_assets, market.num_classes)
+    assert update is not None
+    assert torch.isfinite(fintta_out.probabilities).all()
+    assert torch.isfinite(tent_probs).all()
+    assert torch.isfinite(online_probs).all()

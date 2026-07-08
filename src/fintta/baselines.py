@@ -100,7 +100,7 @@ class TentFullEngine(_BaselineEngine):
 
     def step(self, batch: AssetBatch) -> torch.Tensor:
         batch = self._step_batch(batch)
-        self.model.train()
+        self.model.eval()
         self.optimizer.zero_grad(set_to_none=True)
         raw_logits = _raw_logits(self.model, batch.x)
         probs = _probabilities(self.model, raw_logits)
@@ -138,15 +138,17 @@ class EATAStyleEngine(TentFullEngine):
             for name, param in self.model.named_parameters()
             if name in self.trainable_names
         }
+        self.last_selected_count = 0
 
     def step(self, batch: AssetBatch) -> torch.Tensor:
         batch = self._step_batch(batch)
-        self.model.train()
+        self.model.eval()
         self.optimizer.zero_grad(set_to_none=True)
         raw_logits = _raw_logits(self.model, batch.x)
         probs = _probabilities(self.model, raw_logits)
         ent = entropy(probs, eps=self.epsilon)
         selected = ent < self.entropy_threshold
+        self.last_selected_count = int(selected.sum().detach().cpu())
         loss: torch.Tensor | None = None
         if selected.any():
             loss = ent[selected].mean()
@@ -282,7 +284,7 @@ class OnlineTempEngine(_BaselineEngine):
     def observe(self, labels: torch.Tensor) -> dict[str, float] | None:
         if self.last_logits is None:
             return None
-        self.model.train()
+        self.model.eval()
         self.optimizer.zero_grad(set_to_none=True)
         labels = labels.to(self.device)
         loss = F.cross_entropy(_calibrated_logits(self.model, self.last_logits), labels)
