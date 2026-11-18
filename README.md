@@ -212,6 +212,10 @@ The base model stays frozen. Only small adaptation parameters are updated: calib
   - risk/graph/prior/teacher ablations
   - Tent-lite
   - conservative bias/temperature rescue variants
+  - published-method baselines in `src/fintta/baselines.py`: `tent_full`, `eata_style`, `lame`, `adaptable_style`, `online_temp`, `aci`
+  - an optional FT-Transformer-lite source model (`--model-arch ft_lite`)
+- `scripts/aggregate_runs.py`: combines several run directories into mean/std tables and paired bootstrap tests of NLL and Brier against `no_adaptation`
+- `scripts/make_paper_figures.py`: calibration-gap figure from per-day dumps (`<run>/daily/<variant>.csv`); it needs `matplotlib`, which is not in `pyproject.toml`
 - Result summaries under `outputs/*/metrics.csv`
 - Notes on the negative result in `docs/RESULTS_OPEN_PANEL.md`
 
@@ -227,7 +231,18 @@ docs/                    Protocol, schema, and result notes
 outputs/*/metrics.csv    Committed summary result tables
 ```
 
-Large generated parquet files are ignored because they exceed normal GitHub limits. The scripts rebuild them locally.
+Large generated parquet files are ignored because they exceed normal GitHub limits. The scripts rebuild them locally. For runs, only `metrics.csv` and `run_summary.json` are committed; checkpoints and the per-day `daily/` dumps used by `aggregate_runs.py` and `make_paper_figures.py` stay local.
+
+Committed run outputs:
+
+```text
+outputs/open_panel_full/                    Main full run (pre-fix)
+outputs/open_panel_full_postfix/            Full rerun after the audit fixes
+outputs/open_panel_rescue_180/              Conservative bias/temperature variants
+outputs/open_panel_rescue_calibration_180/  Calibration-only variant
+outputs/open_panel_quick*/                  --quick smoke runs
+outputs/open_panel_rescue_quick/            --quick smoke run of the rescue variants
+```
 
 ## Setup
 
@@ -252,8 +267,10 @@ pytest -q
 Current local verification:
 
 ```text
-24 passed
+41 passed
 ```
+
+CI (`.github/workflows/ci.yml`) runs `ruff check .` and `pytest -q` on Python 3.10-3.12.
 
 ## Rebuild The Open-Data Prototype
 
